@@ -142,8 +142,6 @@ class NitroxBlender {
     if (p.bank)
       this.setBank(p.bank);
     this.action = p.action;
-    if (typeof p.debug === "function")
-      this.debug = p.debug;
   }
 
   /**
@@ -151,7 +149,7 @@ class NitroxBlender {
    * @param {BankCylinder} bank
    */
   setBank(bank_cyl) {
-    this.debug(`setBank: ${bank_cyl.name}`);
+    console.debug(`setBank: ${bank_cyl.name}`);
     if (typeof bank_cyl.mix === 'undefined')
       bank_cyl.mix = 1; // pure O2
     this.bank = bank_cyl;
@@ -206,23 +204,23 @@ class NitroxBlender {
    * Can we add O2 usefully?
    */
   canAddFromBank() {
-    this.debug("canAddFromBank:",
+    console.debug("canAddFromBank:",
                `Ps is ${this.Ps}`,
                `ideal Pf is ${this.Pf().toFixed(2)}`,
                `(a Pi of ${(this.Ps + this.Pf()).toFixed(2)})`);
     if (this.Pf() <= 0) {
-      this.debug(`\tenough or too much O2 in cylinder`);
+      console.debug(`\tenough or too much O2 in cylinder`);
       return false;
     }
     if (this.bestPf() > 0) {
-      this.debug(
+      console.debug(
         `\tThe ${this.bank.size}L bank has ${this.bank.bar} bar`,
         `so can provide Pf up to ${this.bestPf().toFixed(2)} bar`,
         `(a Pi of ${(this.Ps + this.bestPf()).toFixed(2)})`);
       return true;
     }
-    this.debug(`\tThe ${this.bank.size}L bank has ${this.bank.bar} bar`);
-    this.debug(`\tEquilibrium pressure is ${-this.bestPf().toFixed(2)} bar lower than cylinder pressure ${this.Ps}`);
+    console.debug(`\tThe ${this.bank.size}L bank has ${this.bank.bar} bar`);
+    console.debug(`\tEquilibrium pressure is ${-this.bestPf().toFixed(2)} bar lower than cylinder pressure ${this.Ps}`);
     return false;
   }
 
@@ -237,15 +235,15 @@ class NitroxBlender {
    * Bleed down as far as we need to to achieve the Md with this bank.
    */
   bleedDown() {
-    this.debug(`bleed down:`);
+    console.debug(`bleed down:`);
     const startPs = this.Ps;
-    this.debug(`\tstart Ps ${startPs}`);
+    console.debug(`\tstart Ps ${startPs}`);
     if (this.Ps >= this.bank.bar) {
       // Too much pressure in the cylinder.
       // Bleed down below the bank pressure.
       this.Ps = this.bank.bar;
-      this.debug(`\ttoo much pressure, bleed below ${this.Ps}`);
-      this.debug(`\tPf now ${this.Pf()}`);
+      console.debug(`\ttoo much pressure, bleed below ${this.Ps}`);
+      console.debug(`\tPf now ${this.Pf()}`);
     }
 
     if (this.Pf() <= 0) {
@@ -259,7 +257,7 @@ class NitroxBlender {
       // Pd * (Md - Mt) = Ps * (Ms - Mt)
       // Ps = Pd * (Md - Mt) / (Ms - Mt)
       this.Ps = this.Pd * (this.Md - this.Mt) / (this.Ms - this.Mt);
-      this.debug(`\ttoo much O2, bleed to ${this.Ps}`);
+      console.debug(`\ttoo much O2, bleed to ${this.Ps}`);
     }
 
     if (this.Ps + this.Pf() > this.bank.bar) {    
@@ -289,11 +287,11 @@ class NitroxBlender {
       ((this.Ms - this.Mt) - (this.bank.mix - this.Mt) /
        (this.Sc / this.bank.size + 1));
       if (this.Ps < 1) this.Ps = 1;
-      this.debug(`\tdrop below bank to ${this.Ps} bar`);
+      console.debug(`\tdrop below bank to ${this.Ps} bar`);
     }
     const drained_l = this.Sc * (startPs - this.Ps);
     const wasted_l = drained_l * (this.Ms - AIR);
-    this.debug(`\tBleed will waste ${wasted_l}L of O2 worth ${wasted_l * this.O2_gbp}`);
+    console.debug(`\tBleed will waste ${wasted_l}L of O2 worth ${wasted_l * this.O2_gbp}`);
     this.action({
       action: "Bleed",
       to_bar: this.Ps, // target pressure
@@ -301,7 +299,7 @@ class NitroxBlender {
       drained_bar: drained_l / this.Sc, // total bar drained
       wasted_l: wasted_l // litres of O2 wasted
     });
-    this.debug(`\tAfter bleeding cylinder is now ${this.Ps} bar`,
+    console.debug(`\tAfter bleeding cylinder is now ${this.Ps} bar`,
                `\n\t${wasted_l} of O2 wasted`);
   }
 
@@ -314,7 +312,7 @@ class NitroxBlender {
     if (Pf <= 0)
       return;
     const litres_used = Pf * this.Sc;
-    this.debug(`addO2: Pf ${Pf.toFixed(2)} bar, ${litres_used.toFixed(2)}L`);
+    console.debug(`addO2: Pf ${Pf.toFixed(2)} bar, ${litres_used.toFixed(2)}L`);
     const leftInBank = (this.bank.size * this.bank.bar - litres_used)
           / this.bank.size;
     this.action({
@@ -328,7 +326,7 @@ class NitroxBlender {
     });
     this.Ms = (this.Ps * this.Ms + Pf) / (this.Ps + Pf);
     this.Ps += Pf;
-    this.debug(`\tAfter adding O2 bank has ${leftInBank.toFixed(2)} bar left`,
+    console.debug(`\tAfter adding O2 bank has ${leftInBank.toFixed(2)} bar left`,
                `\n\t\tcylinder is now ${this.Ps.toFixed(2)} bar`,
                `\n\t\tintermediate Ms = ${(this.Ms * 100).toFixed(2)}%`,
                `\n\t\tcost £${(litres_used * this.bank.price).toFixed(2)}`);
@@ -350,7 +348,7 @@ class NitroxBlender {
       used_l: Pt * this.Sc
     });
     const mix = (this.Ps * this.Ms + Pt * this.Mt) / this.Pd;
-    this.debug(`topUp: ${Pt.toFixed(2)} bar of air,`,
+    console.debug(`topUp: ${Pt.toFixed(2)} bar of air,`,
                `which will result in a ${(mix * 100).toFixed(2)}% mix`);
     this.Ps += Pt;
   }
@@ -372,16 +370,16 @@ class NitroxBlender {
       throw new Error("Invalid start bank");
       
     if (this.Ms <= 0.21) this.Ms = AIR;
-    this.debug("blend: target is", this.Pd, "bar of",
+    console.debug("blend: target is", this.Pd, "bar of",
                `${this.Md * 100}% in a`,
                `${this.Sc}L cylinder`);
-    this.debug(
+    console.debug(
       `\tCylinder already has ${this.Ps.toFixed(2)} bar`,
       `of ${this.Ms * 100}%,`,
       `so contains ${(this.Ps * this.Ms).toFixed(2)} bar of O2`);
 
     if (this.Ms > AIR)
-      this.debug(
+      console.debug(
         "\tThis is", (this.Ps * (this.Ms - AIR) * this.Sc).toFixed(2),
         "litres over air");
 
@@ -445,19 +443,18 @@ class NitroxBlender {
       Ms: this.Ms, Ps: this.Ps,
       Md: this.Md, Pd: this.Pd,
       O2_gbp: this.O2_gbp,
-      action: action,
-      debug: this.debug
+      action: action
     };
-    this.debug("Finding best blend");
+    console.debug("Finding best blend");
     const res = {};
     for (let startBank = 0; startBank < banks.length; startBank++) {
       const bank = banks[startBank];
-      this.debug(`-- Starting with bank ${bank.name}`);
+      console.debug(`-- Starting with bank ${bank.name}`);
       if (bank.bar <= 1) {
-        this.debug("\tbank is empty");
+        console.debug("\tbank is empty");
         continue;
       } else {
-        this.debug(`\tbank has ${bank.bar} bar`);
+        console.debug(`\tbank has ${bank.bar} bar`);
       }
       drained_l = 0;
       wasted_l = 0;
@@ -482,12 +479,12 @@ class NitroxBlender {
         if (typeof res.cheapest === 'undefined'
             || fill.wasted_gbp + fill.pay_gbp
             < res.cheapest.wasted_gbp + res.cheapest.pay_gbp) {
-          this.debug(`\tcheapest bank ${bank.name}`);
+          console.debug(`\tcheapest bank ${bank.name}`);
           res.cheapest = fill;
         }
         if (typeof res.fastest === 'undefined'
             || fill.time < res.fastest.time) {
-          this.debug(`\tfastest bank ${bank.name}`);
+          console.debug(`\tfastest bank ${bank.name}`);
           res.fastest = fill;
         }
       }

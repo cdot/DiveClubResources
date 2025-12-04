@@ -1,4 +1,4 @@
-/*@preserve Copyright (C) 2018-2024 Crawford Currie http://c-dot.co.uk license MIT*/
+/*@preserve Copyright (C) 2018-2025 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env browser,jquery */
 
 /**
@@ -6,7 +6,7 @@
  */
 
 import { Config } from "./Config.js";
-import { WebDAVStore } from "./WebDAVStore.js";
+import { GetPostStore } from "./GetPostStore.js";
 import { Entries } from "./Entries.js";
 import { Roles } from "./Roles.js";
 
@@ -30,14 +30,12 @@ function tick() {
   window.setTimeout(tick, when);
 }
 
+window.SERVER_URL = String(window.location).replace(/\?.*/, "");
+
 class Sheds {
 
   /**
    * @param {object} params parsed from the URL in main.js
-   * @param {function?} params.debug - debugging method, same sig as
-   * console.debug
-   * @param {string?} params.cache_url - override the cache url (normally read
-   * from cookies)
    * @param {boolean?} params.console - redirect debugging output to a console.
    * Useful when debugging on a browser that doesn't have a debugger
    * (such as Android Webview)
@@ -52,33 +50,11 @@ class Sheds {
     this.keepConsoleOpen = params.console;
 
     /**
-     * Debug print function. Messages are always added to the app console,
-     * and to the developer console if debug is set.
-     */
-    this.debug = (...args) => {
-      const mess = args.join(" ");
-      if (params.debug)
-        console.debug(mess);
-      const $div = $("<div></div>");
-      $div.text(mess);
-      $("#console").append($div);
-    };
-
-    // Possible override of cache_url, otherwise use whatever
-    // is cookied in the browser
-    if (params.cache_url) {
-      Cookies.set("cache_url", params.cache_url, {
-        expires: 365,
-				sameSite: "strict"
-      });
-    }
-
-    /**
-     * Configuration. The default uses a WebDAVStore.
+     * Configuration. The default uses a GetPostStore.
      * @member {Config}
      */
     this.config = new Config(
-      new WebDAVStore(this.debug),
+      new GetPostStore(),
       {
         loan_return: 10,
         o2: {
@@ -90,7 +66,7 @@ class Sheds {
 						4: { size: 11, price: 0.03, bar: 230 }
 					}
 				},
-        
+
         compressor: {
           portable: {
             filter: {
@@ -112,18 +88,15 @@ class Sheds {
             pumping_rate: 300,
             purge_freq: 5,
             safe_limit: 25,
-            sensor_url: null,
-            enable_intake_temp: true,
+            enable_intake_temperature: true,
             enable_intake_humidity: true,
-            enable_internal_temp: true,
+            enable_internal_temperature: true,
             enable_power: true,
-            poll_frequency: 0,
+            poll_frequency: 5000,
             internal_temperature_alarm: 90
           }
         }
-      },
-      this.debug
-    );
+      });
 
     new Roles()
     .init(this.config)
@@ -131,12 +104,12 @@ class Sheds {
   }
 
   /**
-   * Update all UIs from the cache
+   * Update all UIs from the files in the store
    * @return {Promise} promise that resolves to this
    * @override
    */
   reloadUI() {
-    this.debug("Reloading UI");
+    console.debug("Reloading UI");
     return Promise.all(
       Object.values(this)
 			.filter(f => f instanceof Entries)
@@ -155,7 +128,7 @@ class Sheds {
       });
       return Promise.reject(new Error("Cannot update form web"));
     }
-    this.debug("Updating WebDAV from read-only database");
+    console.debug("Updating from read-only database");
     return new Entries()
     .init({
       url: this.config.get("db_index_url"),
@@ -192,7 +165,7 @@ class Sheds {
   initialise_ui() {
     // If tabs aren't working, check there's no base tag in <meta>
     $("#main_tabs").tabs();
-    this.debug("Tabs built");
+    console.debug("Tabs built");
 
     // Generics
     $(".spinner").spinner();
@@ -276,122 +249,31 @@ class Sheds {
     });
   }
 
-  promise_to_reconnect(url) {
-		const app = this;
-    return new Promise(resolve => {
-      $.confirm({
-        title: $("#connect_failed_dialog").prop("title"),
-        content: $("#connect_failed_dialog").html(),
-        onContentReady: function () {
-          const jc = this;
-          jc.$content
-          .find("input")
-          .on("change", () => {
-            jc.$$try_again.trigger("click");
-          })
-          .val(url ? url : "");
-          jc.$content.find(".url").text(url);
-          jc.buttons.try_again.setText("Try again");
-          jc.buttons.continue_without.setText("Continue without cache");
-        },
-        buttons: {
-          try_again: function () {
-            const nurl = this.$content.find("input").val();
-            app.debug("Trying again with", nurl);
-            resolve(app.cache_connect(nurl));
-          },
-          continue_without:  function () {
-            app.debug("Continuing without cache");
-            $(document).trigger("reload_ui");
-            resolve();
-          }
-        }
-      });
-    });
-  }
-
-  promise_to_authenticate(url) {
-    const app = this;
-    return new Promise(resolve => {
-      $.confirm({
-        title: $("#auth_required").prop("title"),
-        content: $("#auth_required").html(),
-        onContentReady: function () {
-          this.$content.find(".url").text(url);
-          this.$content
-					.find("input[name='pass']")
-					.on("change", () => {
-						this.$$login.trigger("click");
-					});
-        },
-        buttons: {
-          login: function () {
-            const user = this.$content
-								  .find("input[name='user']").val();
-            const pass = this.$content
-								  .find("input[name='pass']").val();
-            app.config.store.setCredentials(user, pass);
-            resolve(app.cache_connect(url));
-          }
-        }
-      });
-    });
-  }
-
-  cache_connect(url) {
-    this.debug("Trying to connect to", url);
+  /**
+   * Load config.json from the database url, or write a draft
+   * @param {string} url the url to load from
+   * @param {boolean} no_draft true if we shouldn't try to save a draft
+   */
+  setup_database(url, no_draft) {
+    console.debug(`setup_database: setting up store at ${url}`);
     return this.config.store
     .connect(url)
     .then(() => {
-      this.debug("connected to", url, "loading config");
+      console.debug(`setup_database: Connected to ${url}, loading config`);
       return this.config.load()
-      .then(() => {
-        Cookies.set("cache_url", url, {
-          expires: 365
-        });
-
+      .catch(e => {
+        console.debug("Config.load: failed:", e);
+        // Carry on with defaults
+        alert("Failed to load database configuration, probably because config.json couldn't be found. You should check the configuration and save it. Continuing with defaults.");
+      })
+      .always(() => 
 				// Reset all Entries
 				Promise.all(Object
 								    .values(this)
 								    .filter(f => f instanceof Entries)
 								    .map(f => f.reset()))
-				.then(() => $(document).trigger("reload_ui"));
-      })
-      .catch(e => {
-        this.debug("config.json load failed:", e,
-                   "Trying to save a draft");
-        return this.config.save()
-        .then(() => {
-          return this.cache_connect(url);
-        })
-        .catch(e => {
-          this.debug("Bootstrap failed:", e);
-          $.alert({
-            title: "Bootstrap failed",
-            content: "Could not write config.json"
-          });
-          return this.promise_to_reconnect();
-        });
-      });
-    })
-    .catch(e => {
-      this.debug(url, "connect failed", e);
-      if (e.status === 401) {
-        // XMLHttpRequest will only prompt for credentials if
-        // the request is for the same origin with no explicit
-        // credentials. So we have to handle credentials.
-        this.debug("Auth failure, get auth");
-        return this.promise_to_authenticate(url);
-      }
-      //return this.promise_to_reconnect(url);
-      // Trying to repeatedly connect doesn't provide any
-      // useful feedback. Rejecting at least gives a chance
-      // to feeback.
-      if (e.html)
-        $("#loading").html(e.html);
-      return Promise.reject(new Error("Could not connect to " + url));
+				.then(() => $(document).trigger("reload_ui")));
     });
-
   }
 
   begin() {
@@ -408,8 +290,7 @@ class Sheds {
 						config: this.config,
 						sheds: this,
 						id: id,
-						store: this.config.store,
-						debug: this.debug
+						store: this.config.store
 					});
         })
         .then(tab => tab.loadUI())
@@ -418,21 +299,9 @@ class Sheds {
 		});
 		return Promise.all(requires)
     .then(() => this.initialise_ui())
-    .then(() => {
-      let promise;
-      const url = Cookies.get("cache_url");
-      if (typeof url === "undefined" || url.length == 0)
-        promise = this.promise_to_reconnect();
-      else
-        promise = this.cache_connect(url);
-
-      return promise
-      .then(() => {
-        this.debug("Initialised");
-      })
-      .catch(e => {
-        console.error("Internal failure", e, url);
-      });
+    .then(() => this.setup_database(`${window.SERVER_URL}data`))
+    .catch(e => {
+      console.error(`Failed to setup store`, e);
     });
   }
 }

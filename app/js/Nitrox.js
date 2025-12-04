@@ -143,7 +143,7 @@ class Nitrox extends Entries {
 			if (banks[id].price < this.O2_gbp)
 				this.O2_gbp = banks[id].price;
 		}
-		this.debug(`Cheapest O2 ${this.O2_gbp}`);
+		console.debug(`Cheapest O2 ${this.O2_gbp}`);
 
 		$("input[name=nox_bank]")
 		.on("change", () => this.recalculate());
@@ -151,7 +151,7 @@ class Nitrox extends Entries {
     return this.loadFromStore()
     .then(() => {
       if (this.length() > 0) {
-			  this.debug("Loading " + this.length() + " o2 records");
+			  console.debug("Loading " + this.length() + " o2 records");
 			  for (let i = 0; i < this.length(); i++) {
 				  const cur = this.get(i);
 				  // adjust
@@ -162,7 +162,7 @@ class Nitrox extends Entries {
 			  }
         this.recalculate();
       } else
-        this.debug("No nitrox records found");
+        console.debug("No nitrox records found");
       return this;
     })
     .catch(e => {
@@ -248,7 +248,7 @@ class Nitrox extends Entries {
 			}
 		}
 
-    this.debug("Blending conditions", conditions);
+    console.debug("Blending conditions", conditions);
 
 		// Given:
 		// Ps = start pressure in cylinder
@@ -274,9 +274,7 @@ class Nitrox extends Entries {
 			// Min price of O2
 			O2_gbp: this.O2_gbp,
 
-			action: action,
-			
-			debug: this.debug
+			action: action
 		});
 
 		// copy the selected banks

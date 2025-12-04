@@ -385,7 +385,7 @@ class Loans extends Entries {
   reload_ui() {
     return this.loadFromStore()
     .then(() => {
-      this.debug("Loading " + this.length() + " loan records");
+      console.debug("Loading " + this.length() + " loan records");
       this.load_tbody();
       this.capture = $.extend({}, DEFAULTS);
       this.load_tfoot();

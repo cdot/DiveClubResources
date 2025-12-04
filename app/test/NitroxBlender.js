@@ -187,7 +187,6 @@ const tests = [
 
   {
 		name: "strong mix, all banks needed",
-		//debug: console.debug,
     T: Gas.C2K(14),
     Sc:  15,
     Ms: 0.50,  Ps: 100,
@@ -285,7 +284,6 @@ describe("NitroxBlender", () => {
 		];
 
 		const params = {
-		  //debug: console.debug,
 			T: Gas.C2K(20),
 			Sc:  7,
 			Ms: 0.40,  Ps: 160,
@@ -304,7 +302,6 @@ describe("NitroxBlender", () => {
 	  ];
 
 	  const params = {
-		  //debug: console.debug,
 		  T: Gas.C2K(14),
 		  Sc:  15,
 		  Ms: 0.50,  Ps: 100,

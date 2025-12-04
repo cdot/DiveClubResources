@@ -85,7 +85,7 @@ class Compressor extends Entries {
    */
   _addCompressorRecord() {
 		if (typeof this.$form.valid === "function" && !this.$form.valid()) {
-      this.debug("Form invalid");
+      console.debug("Form invalid");
 			return;
     }
 		const $session_pause = this.$tab.find("button.session_pause");
@@ -101,7 +101,7 @@ class Compressor extends Entries {
 					el.name, $(el).val());
       }
 		});
-		this.debug("Adding compressor record", record);
+		console.debug("Adding compressor record", record);
 		this._add(record).then(() => {
 			// Clear the timer
 			this.session_time = 0;
@@ -250,7 +250,7 @@ class Compressor extends Entries {
 						el.name, $(el).val());
 			});
       record.filters_changed = true;
-			this.debug("Adding filter changed record", record);
+			console.debug("Adding filter changed record", record);
 			this._add(record);
 		})
     .button(
@@ -353,6 +353,7 @@ class Compressor extends Entries {
     // Adjust validation rules, if validation is supported
     if (typeof this.runtime.rules === "function") {
       this.$runtime.rules("remove", "min");
+      throw new Error("r not defined");
       this.$runtime.rules("add", {
         min: r + 1 / (60 * 60) // 1 second 1
       });
@@ -365,8 +366,7 @@ class Compressor extends Entries {
    * for a sensor
    */
   _getSample(name) {
-    const url = this.config.get(`compressor:${this.id}:sensor_url`)
-          + `/${name}`;
+    const url = `${window.SERVER_URL}${name}`;
     return $.getJSON(url, {
       t: Date.now() // defeat cache
     });
@@ -375,7 +375,7 @@ class Compressor extends Entries {
   reload_ui() {
 		return this.loadFromStore()
     .then(() => {
-      this.debug("\t", this.length(), this.id,
+      console.debug("\t", this.length(), this.id,
                  "compressor records");
       const cur = this.lastEntry();
       if (cur)
@@ -419,7 +419,7 @@ class Compressor extends Entries {
       const thresh = Date.now() - spec.max_age;
       if (sample.time < thresh) {
         // Sample unavailable or too old
-        this.debug(`Sample for ${id} too old`);
+        console.debug(`Sample for ${id} too old`);
         sample = null;
       } else if (spec.enable) {
         const $enable = $(spec.enable);
@@ -427,7 +427,7 @@ class Compressor extends Entries {
           sample = null;
       }
     }
-    //else this.debug(`Sample for ${id} unavailable`);
+    //else console.debug(`Sample for ${id} unavailable`);
 
     if (!sample) {
       $el.prop("readonly", null);
@@ -465,73 +465,65 @@ class Compressor extends Entries {
       clearTimeout(this.sensor_timeoutID);
     this.sensor_timeoutID = null;
 
-    const url = this.config.get("compressor:" + this.id + ":sensor_url");
-    let promises;
-    if (typeof url !== "string" || url.length === 0) {
-      this.debug("No sensor URL set");
-      promises = [];
-    }
-    else {
-      promises = [
-        // Promise to update runtime, This is always sampled.
-        this._getSample("power")
-        .then(sample => {
-          this._setRuntimeAndDigits(
-            this.runtime + sample.sample / (60 * 60 * 1000));
-          this._validateForm();
-        })
-        .catch(() => this._setRuntimeAndDigits(this.runtime, true))
-      ];
+    const promises = [
+      // Promise to update runtime, This is always sampled.
+      this._getSample("power")
+      .then(sample => {
+        this._setRuntimeAndDigits(
+          this.runtime + sample.sample / (60 * 60 * 1000));
+        this._validateForm();
+      })
+      .catch(() => this._setRuntimeAndDigits(this.runtime, true))
+    ];
       
-      // Promise to update sampled fields. These can be disabled in the
-      // settings.
-      $(`input[data-compressor=${this.id}][data-sensor-config]`)
-      .each((i, el) => {
-        const $el = $(el);
-        const info = $el.data("sensor-config");
-        if (this.config.get(`compressor:${this.id}:enable_${info.name}`)) {
-          promises.push(
-            this._getSample(info.name)
-            .then(sample => this._updateSampledField($el, sample))
-            .catch(() => this._updateSampledField($el, null)));
-        }
-        //else
-        //  this.debug(`compressor:${this.id}:enable_${info.name}`,
-        //             "sensor is disabled",
-        //            this.config.get(`compressor:${this.id}:enable_${info.name}`));
-      });
+    // Promise to update sampled fields. These can be disabled in the
+    // settings.
+    $(`input[data-compressor=${this.id}][data-sensor-config]`)
+    .each((i, el) => {
+      const $el = $(el);
+      const info = $el.data("sensor-config");
+      if (this.config.get(`compressor:${this.id}:enable_${info.name}`)) {
+        promises.push(
+          this._getSample(info.name)
+          .then(sample => this._updateSampledField($el, sample))
+          .catch(() => this._updateSampledField($el, null)));
+      }
+      //else
+      //  console.debug(`compressor:${this.id}:enable_${info.name}`,
+      //             "sensor is disabled",
+      //            this.config.get(`compressor:${this.id}:enable_${info.name}`));
+    });
 
-      // Promise to check alarm sensors
-      $(`.alarm[data-compressor=${this.id}][data-sensor-config]`)
-      .each((i, el) => {
-        const $el = $(el);
-        if ($el.data("compressor") !== this.id)
-          return;
-        const info = $el.data("sensor-config");
-        if (this.config.get(`compressor:${this.id}:enable_${info.name}`)) {
-          promises.push(
-            this._getSample(info.name)
-            .then(sample => {
-              sample = sample ? sample.sample : 0;
-              const $report = $(".fixed_internal_temp");
-              $report.html(`${Math.round(sample)}&deg;C`);
-              const alarm_temp = this.config.get(
-                `compressor:${this.id}:${info.name}_alarm`);
-              if (sample >= alarm_temp) {
-                $report.addClass("error");
-                $el.show();
-                if (typeof Audio !== "undefined") {
-                  const snd = new Audio("app/sounds/siren.mp3");
-                  snd.play();
-                }
-              } else {
-                $report.removeClass("error");
-                $el.hide();
+    // Promise to check alarm sensors
+    $(`.alarm[data-compressor=${this.id}][data-sensor-config]`)
+    .each((i, el) => {
+      const $el = $(el);
+      if ($el.data("compressor") !== this.id)
+        return;
+      const info = $el.data("sensor-config");
+      if (this.config.get(`compressor:${this.id}:enable_${info.name}`)) {
+        promises.push(
+          this._getSample(info.name)
+          .then(sample => {
+            sample = sample ? sample.sample : 0;
+            const $report = $(".fixed_internal_temp");
+            $report.html(`${Math.round(sample)}&deg;C`);
+            const alarm_temp = this.config.get(
+              `compressor:${this.id}:${info.name}_alarm`);
+            if (sample >= alarm_temp) {
+              $report.addClass("error");
+              $el.show();
+              if (typeof Audio !== "undefined") {
+                const snd = new Audio("app/sounds/siren.mp3");
+                snd.play();
               }
-            }));
-        }
-      });
-    }
+            } else {
+              $report.removeClass("error");
+              $el.hide();
+            }
+          }));
+      }
+    });
 
     // Check all sensors
     Promise.all(promises)
@@ -564,14 +556,14 @@ class Compressor extends Entries {
     let flr = avelife;
     let runtime = 0;
     if (details)
-      this.debug("Compute rfl from", this.length(), "records");
+      console.debug("Compute rfl from", this.length(), "records");
     for (const e of this.entries) {
       if (e.filters_changed) {
         // Filters changed. Zero runtime (or filters
         // changed after runtime) assumed.
         flr = avelife;
         if (details)
-          this.debug("Filters changed, lifetime = " + flr);
+          console.debug("Filters changed, lifetime = " + flr);
       } else {
         const dt = (e.runtime - runtime); // hours
         if (dt > 0) {
@@ -581,17 +573,17 @@ class Compressor extends Entries {
                 (1 + Math.pow(e.temperature / fcc, fcb));
           const hours_at_T = avelife * factor;
           if (details)
-            this.debug("Predicted lifetime at "
+            console.debug("Predicted lifetime at "
                        + e.temperature +
                        "°C is " + hours_at_T + " hours");
           const used = avelife * dt / hours_at_T;
           if (details)
-            this.debug("Run of " + dt + " hours used " + used
+            console.debug("Run of " + dt + " hours used " + used
                        + " hours of filter life");
           // Fraction of filter change hours consumed
           flr -= used; // remaining filter life
           if (details)
-            this.debug("Remaining filter life " + flr
+            console.debug("Remaining filter life " + flr
                        + " hours");
         }
       }
@@ -616,9 +608,9 @@ class Compressor extends Entries {
     .then(() => {
       r.date = new Date();
       this.push(r);
-      this.debug("Runtime after this event was "
+      console.debug("Runtime after this event was "
                  + r.runtime + " hours");
-      this.debug("New prediction of remaining lifetime is "
+      console.debug("New prediction of remaining lifetime is "
                  + this._remainingFilterLife() + " hours");
       return this.save();
     })

@@ -25,6 +25,7 @@
         "eslint": ">=8.17.0"
     },
     "dependencies": {
+        "body-parser": "^2.2.1",
         "cors": "^2.8.5",
         "ds18b20-raspi": "^0.3.6",
         "express": "^4.21.2",

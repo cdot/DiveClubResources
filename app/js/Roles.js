@@ -26,7 +26,7 @@ class Roles extends Entries {
    * @return {Promise} promise that resolves to this
    */
   reloadUI() {
-    this.debug("Reloading roles");
+    console.debug("Reloading roles");
     return this.loadFromStore()
     .then(roles => {
       // Roles.csv has two columns, "role" and "list" which is a

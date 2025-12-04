@@ -1,4 +1,4 @@
-/*@preserve Copyright (C) 2018-2024 Crawford Currie http://c-dot.co.uk license MIT*/
+/*@preserve Copyright (C) 2018-2025 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env browser,jquery */
 
 import Cookies from "js-cookie";
@@ -9,7 +9,6 @@ class Config {
    */
   constructor(store, defaults, debug) {
     this.store = store;
-    this.debug = debug;
     const sd = {};
     let key;
     for (key in defaults) {
@@ -19,29 +18,41 @@ class Config {
     this.store_data = sd;
   }
 
+  /**
+   * Load the config from the store.
+   */
   load() {
     return this.store
     .read("config.json")
     .then(json => {
       const d = JSON.parse(json);
       this.store_data = $.extend({}, this.store_data, d);
-      this.debug("Config loaded");
+      console.debug("Config loaded");
     });
   }
 
+  /**
+   * Save the config to the store.
+   */
   save() {
     return this.store.write(
       "config.json",
       JSON.stringify(this.store_data, null, 1))
     .then(() => {
-      this.debug("Config saved");
+      console.debug("Config saved");
     })
     .catch(e => {
+      console.error("Config save failed", e);
       $.alert({ title: "Config save failed",
                 content: e.message });
     });
   }
 
+  /**
+   * Get a config key with given default.
+   * @param {string} k key
+   * @param {(string|number)?} deflt default
+   */
   get(k, deflt) {
     let data = this.store_data;
     for (const bit of k.split(":")) {
@@ -52,6 +63,11 @@ class Config {
     return data;
   }
 
+  /**
+   * Set a config key to the given value.
+   * @param {string} k key
+   * @param {(string|number)?} v value
+   */
   set(k, v) {
     const bits = k.split(":");
     let data = this.store_data;
@@ -64,6 +80,11 @@ class Config {
     data[bits[0]] = v;
   }
 
+  /**
+   * Populate the dialog for the configuration
+   * @param {Sheds} app the application
+   * @private
+   */
   create(app) {
     this.$content = $("#settings_dialog");
     this.$content.show();
@@ -79,7 +100,7 @@ class Config {
           v = sv;
         }
       }
-      this.debug(`Set ${evt.target.name} = ${v}`);
+      console.debug(`Set ${evt.target.name} = ${v}`);
       this.set(evt.target.name, v);
       this.save();
     });
@@ -102,27 +123,7 @@ class Config {
     $("[data-with-info]", this.$content)
     .with_info();
 
-    $("input[name=cache_url]", this.$content)
-    .on("change", function (e) {
-      const nurl = $(e.target).val();
-      if (nurl != Cookies.get("cache_url")) {
-        Cookies.set("cache_url", nurl, {
-          expires: 365
-        });
-        $.alert({
-          title: "Store cache URL changed",
-          content: "Application will now be reloaded",
-          buttons: {
-            ok: function () {
-              const loc = String(location).replace(/\?.*$/, "");
-              location = loc + "?t=" + Date.now();
-            }
-          }
-        });
-      }
-    });
-
-    $("button[name=update_cache]")
+    $("button[name=update_from_web]")
     .on("click", () => {
       const $a = $.confirm({
         title: "Updating from the web",
@@ -141,15 +142,16 @@ class Config {
     });
   }
 
+  /**
+   * Open the dialog for the config
+   * @param {Sheds} app the application
+   */
   open(app) {
     if (!this.$content)
       this.create(app);
 
     $("input[type=text],input[type=number]", this.$content)
     .each((i, el) => $(el).val(this.get(el.name)));
-
-    $("input[name=cache_url]", this.$content)
-    .val(Cookies.get("cache_url"));
 
     $("input[type=checkbox]", this.$content)
     .each((i, el) => {

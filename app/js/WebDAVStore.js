@@ -9,11 +9,6 @@ import { DAVClient } from "./DAVClient.js";
  */
 class WebDAVStore extends AbstractStore {
 
-  constructor(debug) {
-    super();
-    this.debug = debug;
-  }
-
   // @override
   setCredentials(user, pass) {
     this.user = user;
@@ -38,18 +33,18 @@ class WebDAVStore extends AbstractStore {
     const getUrl = window.location;
     const baseUrl = getUrl.protocol + "//" + getUrl.host + "/"
         + getUrl.pathname.split('/')[1];
-    this.debug("WebDAVStore URL base", baseUrl);
+    console.debug("WebDAVStore URL base", baseUrl);
     if (typeof URL !== "undefined") {
       try {
         url = new URL(url, baseUrl);
       } catch (e) {
-        this.debug("WebDAVStore.connect to " + url + " failed: " + e);
+        console.debug("WebDAVStore.connect to " + url + " failed: " + e);
         return Promise.reject(new Error(
           "Invalid URL, cannot start WebDAVStore"));
       }
     }
 
-    this.debug("WebDAVStore: connecting to " + url);
+    console.debug("WebDAVStore: connecting to " + url);
     var opts = {
       baseUrl: url
     };
@@ -71,7 +66,7 @@ class WebDAVStore extends AbstractStore {
   read(path) {
     const self = this;
 		path = path.replace(/^\/+/, "");
-    this.debug("\tWebDAVStore: Reading", path);
+    console.debug("\tWebDAVStore: Reading", path);
     if (!this.DAV)
       return Promise.reject(new Error("WebDAVStore not connected"));
     return this.DAV
@@ -121,7 +116,7 @@ class WebDAVStore extends AbstractStore {
 
     const self = this;
 
-    this.debug("WebDAVStore: Writing " + path);
+    console.debug("WebDAVStore: Writing " + path);
 
     path = path.replace(/^\/+/, "").split('/');
     var folder = path.slice();

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="copyright" content="Copyright (C) 2018-2022 Crawford Currie http://c-dot.co.uk license MIT">
+    <meta name="copyright" content="Copyright (C) 2018-2025 Crawford Currie http://c-dot.co.uk license MIT">
     <meta charset="UTF-8">
     <meta name="Description" content="Sheds">
     <meta name="cache-control" content="public">
@@ -40,13 +40,13 @@
     <script type="importmap">
       {
         "imports": {
-          "jquery": "./app/node_modules/jquery/dist/jquery.min.js",
-          "jquery-ui": "./app/node_modules/jquery-ui/dist/jquery-ui.min.js",
-          "jquery-csv": "./app/node_modules/jquery-csv/src/jquery.csv.min.js",
+          "jquery": "./app/node_modules/jquery/dist/jquery.js",
+          "jquery-ui": "./app/node_modules/jquery-ui/dist/jquery-ui.js",
+          "jquery-csv": "./app/node_modules/jquery-csv/src/jquery.csv.js",
           "jquery-confirm": "./app/node_modules/jquery-confirm/dist/jquery-confirm.min.js",
           "js-cookie": "./app/node_modules/js-cookie/dist/js.cookie.mjs",
-          "jquery-validate": "./app/node_modules/jquery-validation/dist/jquery.validate.min.js",
-          "jquery-tabledit": "./app/node_modules/jquery-tabledit/jquery.tabledit.min.js"
+          "jquery-validate": "./app/node_modules/jquery-validation/dist/jquery.validate.js",
+          "jquery-tabledit": "./app/node_modules/jquery-tabledit/jquery.tabledit.js"
         }
       }
     </script>
@@ -85,7 +85,7 @@
     </div>
 
     <div id="settings_dialog" class="fullscreen_dialog" data-title="<span class='fa fa-sliders-h'></span> Settings">
-      <button name="update_cache">Update Cache from Remote DB</button>
+      <button name="update_from_web">Update from Remote DB</button>
       <table class="form_table zebra">
         <tr>
           <td>
@@ -227,14 +227,6 @@
             <input class="widest" type="text" url name="db_index_url">
           </td>
         </tr>
-        <tr>
-          <td>
-            Local cache URL
-          </td>
-          <td>
-            <input class="widest" type="text" url name="cache_url">
-          </td>
-        </tr>
       </table>
       <button name="close">Close</button>
     </div>
@@ -247,18 +239,6 @@
         </tr><tr><td>Pass:</td>
           <td class="widest"><input class="widest" type='password' name='pass'></td>
       </tr></table>
-    </div>
-
-    <div id="connect_failed_dialog" class="hidden" title="Connect failed">
-      Could not connect to local cache at '<span class="url">?</span>'.
-      You can continue without the cache, but if you do then no records
-      will be loaded or saved.
-      <table>
-        <tr>
-          <td>Local cache URL:</td>
-          <td class="widest"><input class="widest" type="text" name="cache_url"></td>
-        </tr>
-      </table>
     </div>
 
     <div id="alert_dialog" class="hidden" title="Alert">

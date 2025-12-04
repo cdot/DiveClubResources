@@ -2,7 +2,7 @@
 This is the browser app for the Sheds framework.
 
 The application is written to run in a standard web
-browser. This provides a high degree of portability and openness. The
+browser, which provides a high degree of portability and openness. The
 browser application presents a tab interface, where each tab offers a
 particular service:
 
@@ -14,21 +14,19 @@ particular service:
 
 ## Databases
 
-See [Databases](Databases.md) for details of the database organisation and configuration.
+See [DATABASES.md](DATABASES.md) for details of the database organisation and configuration.
 
 # Development
 
 The browser application is written entirely in Javascript, and should run
 on most modern browsers.
 
-[node.js](https://nodejs.org/en/) is required for installation.
-The `scripts` field of `package.json` is used to run development tasks.
-Available targets are:
+[node.js](https://nodejs.org/en/) is required for development.
+`npm` is used to run development tasks. Available targets are:
 ```
 $ npm run lint # run eslint on source code
 $ npm run update # run ncu-u to update npm dependencies
 $ npm run test # use mocha to run all unit tests
 ```
-To simplify app development, the sensors package can be run
-even when no hardware sensors are available. See the
-[sensors documentation](sensors/README.md) for more.
+To simplify app development, the [server](SERVER.md) can be run
+even when no hardware sensors are available.

@@ -12,14 +12,16 @@ import { RangeSimulator } from "./RangeSimulator.js";
 class DS18x20 extends Sensor {
 
   /**
-   * @param config { sensor_id: } id: one-wire sensor ID for DS18x20
-   * Plus config for Sensor
+   * @param {string} config.name sensor name
+   * @param {Simulator} config.simulation simulator
+   * @param {string} config.sensor_id one-wire sensor ID for DS18x20
    */
   constructor(config) {
     super(config);
     this.mSensorId = config.sensor_id;
   }
 
+  /** @override */
   connect() {
     if (typeof this.mSensorId !== "string")
       return Promise.reject(this.name + " has no sensor_id");
@@ -31,7 +33,7 @@ class DS18x20 extends Sensor {
           reject(err);
           return;
         }
-        console.log("DS18x20", this.mSensorId, "connected");
+        console.debug(`DS18x20 ${this.mSensorId} connected`);
         resolve();
       });
     });
@@ -56,6 +58,7 @@ class DS18x20 extends Sensor {
     });
   }
 
+  /** @override */
 	simulate() {
 		this.simulation = new RangeSimulator(1, 100);
 	}

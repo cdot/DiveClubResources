@@ -9,8 +9,12 @@ import { RangeSimulator } from "./RangeSimulator.js";
 
 const BACK_OFF = 5000; // 5s in ms
 
-// Interface to a DHTxx sensor
+/**
+ * Interface to a DHTxx sensor
+ * @private
+ */
 class DHTPin {
+
   constructor(type, gpio) {
     this.mType = type;
     this.gpio = gpio;
@@ -94,9 +98,9 @@ const DHTPins = {};
 class DHTxx extends Sensor {
 
   /**
-   * type type 11 or 22
-   * gpio raspberry pi gpio pin number
-   * field which field of the sample to return (temperature or humidity)
+   * @param {number} config.device_type type 11 or 22
+   * @param {number} config.gpio raspberry pi gpio pin number
+   * @param {number} config.field which field of the sample to return (temperature or humidity)
    */
   constructor(config) {
     super(config);
@@ -112,11 +116,10 @@ class DHTxx extends Sensor {
   connect() {
     if (!this.device_type || this.device_type != 11
         && this.device_type != 22)
-      return Promise.reject(
-        this.name + " has bad type" + this.device_type);
+      return Promise.reject(`${this.name} has bad type ${this.device_type}`);
 
     if (!this.gpio)
-      return Promise.reject(this.name + " has no gpio");
+      return Promise.reject(`${this.name} has no gpio`);
 
     if (!DHTPins[this.gpio])
       DHTPins[this.gpio] = new DHTPin(this.device_type, this.gpio);
@@ -134,7 +137,7 @@ class DHTxx extends Sensor {
           console.error(this.field, "DHT connect sample failed: ", s.error);
           return Promise.reject("sample failed: " + s.error);
         }
-        console.log(this.name, "connected to GPIO", this.gpio);
+        console.debug(this.name, "connected to GPIO", this.gpio);
         return Promise.resolve();
       });
     });
@@ -146,7 +149,6 @@ class DHTxx extends Sensor {
   sample() {
     return DHTPins[this.gpio].sample()
     .then(sam => {
-      console.log(sam);
       const res = { sample: sam[this.field], time: sam.time };
       if (sam[this.field + "_dubious"])
         res.dubious = sam[this.field + "_dubious"];

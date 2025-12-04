@@ -1,4 +1,4 @@
-// This configuration is stored in a plain .json file in webdav. This is
+// This configuration is stored in a plain .json file. This is
 // just an example.
 {
  "loan_return": 10,

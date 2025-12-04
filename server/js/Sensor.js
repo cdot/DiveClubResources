@@ -7,12 +7,11 @@
 class Sensor {
 
   /**
-   * @param name sensor name
-   * @param server express server
+   * @param {string} config.name sensor name
+   * @param {Simulator} config.simulation simulator
    */
   constructor(config) {
     this.name = config.name;
-    this.log = config.log;
     this.simulation = config.simulation;
   }
 

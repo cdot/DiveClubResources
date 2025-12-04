@@ -42,12 +42,6 @@ class Entries {
   id = "unknown";
 
   /**
-   * Debug function, same sig as console.debug
-   * @member {function}
-   */
-  debug = () => {};
-
-  /**
    * Shortcut to $("#id")
    * @member {jQuery}
    */
@@ -130,7 +124,7 @@ class Entries {
    * @return {Promise} promise that resolves to this
 	 */
 	loadUI() {
-    this.debug(`Loading html/${this.id}.html`);
+    console.debug(`Loading html/${this.id}.html`);
 		return $.get(`app/html/${this.id}.html?nocache=${Date.now()}`)
 		.then(html => {
 			const $tab = $(`<div id="${this.id}"></div>`);
@@ -144,7 +138,7 @@ class Entries {
 			$tab.find('.ui-spinner-button').click(function () {
 				$(this).siblings('input').change();
 			});
-			this.debug("Loaded", this.id);
+			console.debug("Loaded", this.id);
       return this;
 		});
   }
@@ -166,7 +160,7 @@ class Entries {
 	 */
 	reloadUI() {
 		if (this.$tab) {
-			this.debug("Reloading", this.id);
+			console.debug("Reloading", this.id);
 			return this.reload_ui();
 		}
 		return Promise.resolve(this);
@@ -315,9 +309,9 @@ class Entries {
    * @return {Promise} promise that resolves to this
 	 */
   loadFromStore() {
-		this.debug("loadFromStore of", this.id);
+		console.debug("loadFromStore of", this.id);
     if (this.loaded) {
-			this.debug("\talready loaded");
+			console.debug("\talready loaded");
       return Promise.resolve(this);
 		}
 
@@ -358,7 +352,7 @@ class Entries {
     .catch(e => {
       if (typeof e === "object" && e.html)
         e = e.html;
-      this.debug("(debug) error reading " + (this.url || this.file) +
+      console.debug("(debug) error reading " + (this.url || this.file) +
                  ": ", e);
       this.heads = [];
       this.entries = [];

@@ -1,16 +1,23 @@
 /*@preserve Copyright (C) 2019 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env node.js */
 import { Time } from "./Time.js";
+import { Simulator } from "./Simulator.js";
 
-class RangeSimulator {
+/**
+ * Sample that moves within a min..max range with occasional
+ * forays into illegal values
+ */
+class RangeSimulator extends Simulator {
 
   constructor(min, max) {
+    super();
 		this.min = min;
     this.max = max;
   }
 
-	// Sample that moves within a min..max range with occasional
-	// forays into illegal values
+	/**
+   * @override
+   */
   sample() {
     if (typeof this.lastsample == "undefined")
       this.lastsample = (this.min + this.max) / 2;

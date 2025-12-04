@@ -1,16 +1,17 @@
-# Sensors
+# Server
 
-This is an ultra-light web server, designed to be run on a Raspberry Pi with
-DHT11, DS18B20, and a PC817 power sensor, all attached to GPIO.
+This is an ultra-light web server using [Express](https://expressjs.com),
+designed to be run on a Raspberry Pi.
 
-On receipt of an AJAX request the server reads a sensor and reports the
-value read.
+The server supports file access for serving HTML and other resources, and
+AJAX requests for access to DHT11, DS18B20, and PC817 sensors, all attached
+to GPIO.
 
 The pinout for the sensors is shown in [RPi pinout.svg](RPi pinout.svg)
 
 # Hardware Configuration
 
-## DHT11 sensor
+## DHT11
 
 This sensor is used to measure the temperature and humidity of the
 intake air drawn into the compressor.
@@ -19,6 +20,9 @@ Accessing this sensor is handled by the `node-dht-sensor` npm package. We use GP
 
 The sensor has a range between 20% and 90%. If the reading is outside that
 range, the reading is marked as "dubious" as the sensor requires recalibration.
+
+Note that the DHT family humidity sensor is notoriously inaccurate, so it
+can easily be disabled when it falls out of calibration.
 
 ## DS18b20 sensor
 
@@ -46,12 +50,12 @@ Install the server software from github.
 ```
 $ cd ~
 $ git clone https://github.com/cdot/HSAC.git
-$ cd HSAC/sensors
+$ cd HSAC/server
 $ npm install
 ```
 The server is then run as follows:
 ```
-$ node ~/HSAC/sensors/js/sensors.js -c <configuration file>
+$ node ~/HSAC/server/server.js -c <configuration file>
 ```
 The configuration file is a list of sensors. Each sensor has
 at least:
@@ -100,7 +104,7 @@ $ sudo nano /etc/init.d/sensors.sh
 #
 case "$1" in
   start)
-    node /home/pi/HSAC/sensors/js/sensors.js -p 8000 -c /home/pi/HSAC/sensors.cfg > /var/log/sensors.log 2>&1 &
+    node /home/pi/HSAC/server/js/server.js -p 8000 -c /home/pi/HSAC/sensors.cfg > /var/log/sensors.log 2>&1 &
     ;;
   stop)
     pid=`ps -Af | grep "sensors/js/sensors.js" | grep -v grep | sed -e 's/^[^0-9]*//;s/\s.*//'
@@ -123,21 +127,22 @@ the command line:
 ```
 $ sudo service sensors.sh start
 ```
-Sensors must be attached and available when the server is started, or they will
-not be detected by the service. The server can be restarted at any time using
+Sensors must be physically attached and available when the server is
+started, or they will not be detected by the service. The server can be
+restarted at any time using
 ```
 $ sudo service sensors.sh restart
 ```
 When the service is running you can use HTTP requests to query the sensors e.g.
-if your sensors service is running on 192.168.1.24, port 8000:
+if your sensors service is running on 192.168.1.24, port 80:
 ```
-$ curl http://192.168.1.24:8000/internal_temperature
+$ curl http://192.168.1.24/internal_temperature
 ```
-The Sheds browser app uses these queries to update the UI.
+The [browser app](BROWSER.md) uses these queries to update the UI.
 
 # Development
 
-The sensors package is written entirely in Javascript, using [node.js](https://nodejs.org/en/).
+The server is written entirely in Javascript, using [node.js](https://nodejs.org/en/).
 
 The `scripts` field of `package.json` is used to run development tasks.
 Available targets are:
@@ -146,7 +151,7 @@ $ npm run lint # run eslint on source code
 $ npm run update # run ncu-u to update npm dependencies
 $ npm run test # use nocha to run all unit tests
 ```
-To simplify app development, the sensors application can be run even when no
+To simplify app development, the server can be run even when no
 hardware sensors are available by passing the `--simulate` option on the
 command line. This can be done from the command line using:
 ```

@@ -1,4 +1,4 @@
-/*@preserve Copyright (C) 2019 Crawford Currie http://c-dot.co.uk license MIT*/
+/*@preserve Copyright (C) 2019-2025 Crawford Currie http://c-dot.co.uk license MIT*/
 
 /* eslint-env node.js */
 import { promises as Fs } from "fs";
@@ -6,19 +6,24 @@ import { Sensor } from "./Sensor.js";
 import { Time } from "./Time.js";
 import { OnOffSimulator } from "./OnOffSimulator.js";
 
+const GPIOPATH = '/sys/class/gpio/';
+
 /**
  * Keeps a count of the number of ms that a pin with a pull-down is held
  * in a given state between calls to sample().
  */
-const GPIOPATH = '/sys/class/gpio/';
-
 class Timer extends Sensor {
 
+  /**
+   * @param {string} config.name sensor name
+   * @param {number?} config.poll Frequency at which to poll the pin, ms.
+   * @param {number?} config.on_state State of pin that means timer on, 1 or 0, default 0
+  */
   constructor(config) {
     super(config);
+
     // GPIO pin number
     this.gpio = config.gpio;
-    this.pin = GPIOPATH + "gpio" + this.gpio + "/";
 
     // Frequency at which we poll the pin. Polling
     // will be no faster than this, and will probably be slower
@@ -38,7 +43,7 @@ class Timer extends Sensor {
   }
 
   pollPin() {
-    Fs.readFile(this.pin + "value")
+    Fs.readFile(`${GPIOPATH}gpio${this.gpio}/value`)
     .then(v => {
       v = parseInt(v.toString());
       const t = Date.now();
@@ -56,21 +61,21 @@ class Timer extends Sensor {
       return Promise.reject("Timer not given a gpio pin");
 
     // Force-unexport first, in case it was previously left locked after a crash
-    return Fs.writeFile(GPIOPATH + "unexport", "" + String(this.gpio))
+    return Fs.writeFile(`${GPIOPATH}unexport`, `${this.gpio}`)
     .catch(e => {
-      console.error("Unexport", this.gpio, "failed", e);
+      console.error(`Timer: unexport GPIO ${this.gpio} failed`, e);
       return Promise.resolve();
     })
     .then(() => {
-      return Fs.writeFile(GPIOPATH + "export", this.gpio);
+      return Fs.writeFile(`${GPIOPATH}export`, `${this.gpio}`);
     })
     .then(() => {
-      return Fs.readFile(this.pin + "value");
+      return Fs.readFile(`${GPIOPATH}gpio${this.gpio}/value`);
     })
     .then(v => {
       this.isOn = (parseInt(v.toString()) === this.on_state);
       this.pollPin();
-      console.log("Timer polling GPIO", this.gpio, "every", this.poll, "ms");
+      console.debug(`Timer: polling GPIO ${this.gpio} every ${this.poll}ms`);
     });
   }
 

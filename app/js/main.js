@@ -13,6 +13,22 @@ if (url_params) {
     else
       params[set[0]] = set[1];
   }
+
+  if (params.debug) {
+    const superDebug = console.debug;
+
+    /**
+     * Debug print function. Messages are always added to the app console,
+     * and to the developer console.
+     */
+    console.debug = (...args) => {
+      const mess = args.join(" ");
+      superDebug(mess);
+      const $div = $("<div></div>");
+      $div.text(mess);
+      $("#console").append($div);
+    };
+  }
 }
 
 new Sheds(params).begin();
