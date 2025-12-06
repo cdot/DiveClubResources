@@ -26,41 +26,36 @@ import { Time } from "./Time.js";
 const DISTRIBUTION = Path.normalize(Path.join(__dirname, "..", ".."));
 
 const options = {
-  sensors_cfg_file : Path.join(DISTRIBUTION, "sensors.cfg"),
-  data_dir: Path.join(DISTRIBUTION, "data"),
+  serverConfigFile : Path.join(DISTRIBUTION, "server.cfg"),
   simulate: false,
-  port: 8000,
   debug: false
 };
 
 const DESCRIPTION = [
   "DESCRIPTION\nServer giving GET/POST access to static files and database, and AJAX requests for reading sensors attached to host Raspberry Pi.",
   "", "OPTIONS",
-  `\t-c, --config=ARG - Sensors configuration file (default ${options.sensors_cfg_file})`,
-  `\t-d, --data=ARG - full file path to /data directory (default ${options.data_dir})`,
+  `\t-c, --config=ARG - Sensors configuration file (default ${options.serverConfigFile})`,
   "\t-h, --help - Show this help",
-  `\t-p, port=ARG - What port to run the server on (default ${options.port})`,
   "\t-s, --simulate - Use a simulation for any missing hardware, instead of backing off and retrying",
-  "\t-v, --verbose - Verbose debugging messages",
+  "\t-d, --debug - Verbose debugging messages",
   "", "\tThe server supports the following routes:",
   "\tGET /<file> - GET static file from distribution",
   "\tGET /<sensor> - ajax request to read a sensor",
-  "\tGET /data/<file> - GET file text from database",
-  "\tPOST /data/<file> - POST text data to file in to database"
+  "\tGET /data/<file> - GET file text from data_directory",
+  "\tPOST /data/<file> - POST text data to file in data_directory"
 ].join("\n");
 
 const go_parser = new Getopt.BasicParser(
-  "c:(config)d:(data)h(help)p:(port)s(simulate)v(verbose)", process.argv);
+  "c:(config)d(debug)h(help)s(simulate)", process.argv);
 
 let option;
 while ((option = go_parser.getopt())) {
   switch (option.option) {
-  case "d": options.data_dir = option.optarg; break;
+
   case "h": console.log(DESCRIPTION); process.exit();
-  case "c": options.sensors_cfg_file = option.optarg; break;
-  case "p": options.port = option.optarg; break;
+  case "c": options.serverConfigFile = option.optarg; break;
   case 's': options.simulate = true; break;
-  case 'v': options.debug = true; break;
+  case 'd': options.debug = true; break;
   default: throw Error(`Unknown option -${option.option}\n${DESCRIPTION}`);
   }
 }
@@ -87,15 +82,21 @@ function start_sensor(cfg) {
 	});
 }
 	
-Fs.readFile(options.sensors_cfg_file)
+Fs.readFile(options.serverConfigFile)
 .then(config => JSON.parse(config))
 .catch(e => {
-  console.error(`Cannot read sensor configuration from ${options.sensors_cfg_file}`);
+  console.error(`Cannot read server configuration from ${options.serverConfigFile}`);
   console.error(e);
   console.log(DESCRIPTION);
   return Promise.reject(e.message);
 })
 .then(config => {
+  // Apply configuratiuon defaults
+  if (typeof config.data_dir === "undefined")
+    config.data_dir = Path.join(DISTRIBUTION, "data");
+  if (typeof config.port === "undefined")
+    config.port = 8000;
+
   const server = new Express();
 
   server.use(Cors());
@@ -109,11 +110,11 @@ Fs.readFile(options.sensors_cfg_file)
   // Add routes
 
   // get/post database files
-  server.get("/", Express.static(options.data_dir));
+  server.get("/", Express.static(config.data_dir));
   server.use(bodyParser.text({ type: '*/*' }));
   server.post("/data/*", (req, res) => {
     console.debug("POST", req.url, req.body);
-    const path = Path.normalize(Path.join(DISTRIBUTION, req.url));
+    const path = req.url.replace(/^.?\/data\//, config.data_dir);
     return Fs.writeFile(path, req.body);
   });
 
@@ -167,8 +168,8 @@ Fs.readFile(options.sensors_cfg_file)
   Promise.all(promises)
   .then(ps => {
     console.debug(ps);
-    server.listen(options.port);
-    console.log("Server started on port", options.port);
+    server.listen(config.port);
+    console.log("Server started on port", config.port);
   });
 })
 .catch(e => {

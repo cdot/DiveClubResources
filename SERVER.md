@@ -55,10 +55,9 @@ $ npm install
 ```
 The server is then run as follows:
 ```
-$ node ~/HSAC/server/server.js -c <configuration file>
+$ node js/server.js -c <configuration file>
 ```
-The configuration file is a list of sensors. Each sensor has
-at least:
+The configuration file is a JSON format file that specifies the port for the server to use, and the the directory where collected sensor data will be stored. It also contains a list of sensors. Each sensor has at least:
 * class - the name of a class that implements an interface to the sensor
 * name - the name of the sensor. This will be used to create an AJAX
 entry point.
@@ -85,7 +84,7 @@ using the `--help` option.
 
 The server needs to be started on boot, by `/etc/init.d/sensors.sh`
 - you will need to create this file. Assuming the code is checked out to
-`/home/pi/HSAC`:
+`/home/pi/HSAC` and there is a server configuration file at /home/pi/HSAC/sensors.cfg:
 
 ```
 $ sudo nano /etc/init.d/sensors.sh
@@ -104,7 +103,7 @@ $ sudo nano /etc/init.d/sensors.sh
 #
 case "$1" in
   start)
-    node /home/pi/HSAC/server/js/server.js -p 8000 -c /home/pi/HSAC/sensors.cfg > /var/log/sensors.log 2>&1 &
+    node /home/pi/HSAC/server/js/server.js -c /home/pi/HSAC/sensors.cfg > /var/log/sensors.log 2>&1 &
     ;;
   stop)
     pid=`ps -Af | grep "sensors/js/sensors.js" | grep -v grep | sed -e 's/^[^0-9]*//;s/\s.*//'
@@ -134,9 +133,9 @@ restarted at any time using
 $ sudo service sensors.sh restart
 ```
 When the service is running you can use HTTP requests to query the sensors e.g.
-if your sensors service is running on 192.168.1.24, port 80:
+if your sensors service is running on 192.168.1.24, port 8000:
 ```
-$ curl http://192.168.1.24/internal_temperature
+$ curl http://192.168.1.24:8000/internal_temperature
 ```
 The [browser app](BROWSER.md) uses these queries to update the UI.
 
@@ -148,7 +147,7 @@ The `scripts` field of `package.json` is used to run development tasks.
 Available targets are:
 ```
 $ npm run lint # run eslint on source code
-$ npm run update # run ncu-u to update npm dependencies
+$ npm run update # run ncu -u to update npm dependencies
 $ npm run test # use nocha to run all unit tests
 ```
 To simplify app development, the server can be run even when no
