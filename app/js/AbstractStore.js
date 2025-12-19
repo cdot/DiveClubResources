@@ -13,6 +13,7 @@ class AbstractStore {
    * Promise to connect to this store using the given parameters.
    * Pure virtual.
    * @param {object} params
+   * @return {Promise} promise that resolves to this
    */
   connect(params) {
     return Promise.reject(new Error(`Store has no connect method ${params}`));

@@ -1,7 +1,7 @@
 /*@preserve Copyright (C) 2019-2024 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env browser */
 
-import { Sheds } from "./Sheds.js";
+import { App } from "./App.js";
 
 const params = {};
 const url_params = window.location.search.substring(1);
@@ -31,4 +31,4 @@ if (url_params) {
   }
 }
 
-new Sheds(params).begin();
+new App(params).begin();

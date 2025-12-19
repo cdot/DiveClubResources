@@ -91,7 +91,7 @@ describe("Compressor", () => {
     return comp._add({ operator: "Nuts", temperature: 20, humidity:50,runtime: 0 })
     .then(() => {
       assert.equal(comp.length(), 1);
-      var e = comp.get(0);
+      const e = comp.get(0);
       assert.equal(e.temperature, 20);
       assert.equal(e.humidity, 50);
       assert.equal(e.operator, "Nuts");
@@ -104,12 +104,12 @@ describe("Compressor", () => {
     return comp._add({ operator: "Nuts", temperature: 20, runtime: 1 })
     .then(() => {
       return comp.save().then(() => {
-        var s = $.csv.toArrays(comp.config.store.data["fixed_compressor.csv"]);
+        const s = $.csv.toArrays(comp.config.store.data["fixed_compressor.csv"]);
         assert.equal(s.length, 2);
       });
     })
     .then(() => {
-      var s = $.csv.toArrays(comp.config.store.data["fixed_compressor.csv"]);
+      const s = $.csv.toArrays(comp.config.store.data["fixed_compressor.csv"]);
       assert.equal(s.length, 2);
       assert.deepEqual(s[0], stdheads);
       assert(Date.now() - new Date(s[1][0]).getTime() <= 1000,

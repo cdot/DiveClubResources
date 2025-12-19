@@ -135,7 +135,7 @@ function _renderPropSet(properties, xmlNamespaces) {
       '   <d:prop>\n';
 
   for (const ii in properties) {
-    if (!properties.hasOwnProperty(ii)) {
+    if (!Object.hasOwn(properties, ii)) {
       continue;
     }
 
@@ -207,7 +207,7 @@ class DAVClient {
     '  <d:prop>\n';
 
     for (const ii in properties) {
-      if (!properties.hasOwnProperty(ii)) {
+      if (!Object.hasOwn(properties, ii)) {
         continue;
       }
 

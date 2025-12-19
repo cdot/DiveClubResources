@@ -112,10 +112,15 @@ Fs.readFile(options.serverConfigFile)
   // get/post database files
   server.get("/", Express.static(config.data_dir));
   server.use(bodyParser.text({ type: '*/*' }));
-  server.post("/data/*", (req, res) => {
-    console.debug("POST", req.url, req.body);
-    const path = req.url.replace(/^.?\/data\//, config.data_dir);
-    return Fs.writeFile(path, req.body);
+  server.post("/data/*path", (req, res) => {
+    const path = Path.join(config.data_dir, req.params.path[0]);
+    console.debug("POST to", path);
+    return Fs.writeFile(path, req.body)
+    .then(() => res.status(200).send(`${path} saved`))
+    .catch(e => {
+      console.debug("Save failed", e);
+      res.status(400).send(`${path} save failed`);
+    });
   });
 
   // Serve distribution files

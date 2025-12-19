@@ -1,18 +1,22 @@
 /*@preserve Copyright (C) 2018-2025 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env browser,jquery */
 
-import Cookies from "js-cookie";
-
 class Config {
   /**
-   * Configuration items are stored in a file 'config.json' on WebDAV
+   * Store for load/save
+   * @member {AbstractStore}
    */
-  constructor(store, defaults, debug) {
+  store = undefined;
+
+  /**
+   * Configuration items are stored in a file 'config.json' in the store
+   */
+  constructor(store, defaults) {
     this.store = store;
     const sd = {};
     let key;
     for (key in defaults) {
-      if (defaults.hasOwnProperty(key))
+      if (Object.hasOwn(defaults, key))
         sd[key] = defaults[key];
     }
     this.store_data = sd;
@@ -27,7 +31,7 @@ class Config {
     .then(json => {
       const d = JSON.parse(json);
       this.store_data = $.extend({}, this.store_data, d);
-      console.debug("Config loaded");
+      console.debug("Config.load: config.json loaded");
     });
   }
 
@@ -39,7 +43,7 @@ class Config {
       "config.json",
       JSON.stringify(this.store_data, null, 1))
     .then(() => {
-      console.debug("Config saved");
+      console.debug("Config.save: config.json saved");
     })
     .catch(e => {
       console.error("Config save failed", e);
@@ -82,7 +86,7 @@ class Config {
 
   /**
    * Populate the dialog for the configuration
-   * @param {Sheds} app the application
+   * @param {App} app the application
    * @private
    */
   create(app) {
@@ -97,6 +101,7 @@ class Config {
         try {
           v = parseFloat(sv);
         } catch (e) {
+          console.debug(e);
           v = sv;
         }
       }
@@ -144,7 +149,7 @@ class Config {
 
   /**
    * Open the dialog for the config
-   * @param {Sheds} app the application
+   * @param {App} app the application
    */
   open(app) {
     if (!this.$content)

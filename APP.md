@@ -2,19 +2,21 @@
 This is the browser app for the Sheds framework.
 
 The application is written to run in a standard web
-browser, which provides a high degree of portability and openness. The
-browser application presents a tab interface, where each tab offers a
-particular service:
+browser, which provides a high degree of portability and openness.
+It presents a tab interface, where each tab offers a particular service:
 
-1. [Compressor](Compressor.md)
+1. [Compressor](Compressor.md) - logging compressor usage using sensors on the server.
 2. Nitrox - nitrox blending calculations - the calculations necessary for nitrox fills from a bank of cylinders are performed using an ideal gas approximation (there is support for real gas approximation, but it is significantly more complex and makes little difference to the results).
 3. Portable compressor - like fixed compressor but tuned for a portable
 4. Inventory - equipment records. The inventory tab provides a way to quickly look up and find the location of equipment.
 5. Loans - recording of equipment loans with complete editable history and cross-links to inventory. Outgoing loans are recorded by selection from the inventory. Loan returns are recorded aginst the name of the person receiving back the kit. The `Inventory` tab is automatically updated to reflect kit that is out on loan.
 
+You can disable tabs you aren't using by editing index.html.
+
 ## Databases
 
-See [DATABASES.md](DATABASES.md) for details of the database organisation and configuration.
+See [DATABASES.md](DATABASES.md) for details of the database organisation
+and configuration.
 
 # Development
 

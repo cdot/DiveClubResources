@@ -2,65 +2,67 @@
 <div name="no-blender-sel" class="warning">
   Only trained blenders may use this page. Please select your name from the list. If you are not there and want to be trained, contact the Training Officer. If you have recently been trained, your name may not have been added yet. In this case, please use the name of the instructor who taught you.
 </div>
-<div class="flex-row">
-  <label for="blender">
-	Blender
-  </label>
-  <select name="blender" class="blender flex-grow" data-msg="Must be a trained blender" required>
-	<option></option>
-  </select>
-</div>
+<form id="nitrox_form" class="validated_form">
+  <div class="flex-row">
+    <label for="blender">
+	  Blender
+    </label>
+    <select name="blender" class="blender flex-grow" data-msg="Must be a trained blender" required>
+	  <option></option>
+    </select>
+  </div>
 
-<!-- A blender is selected -->
-<div name="blender-sel" class="hidden">
-  <div>
-    The ambient temperature is around <input id="nox_t" name="temperature" data-msg="Must be between 4 and 40" required type="number" class="integer2" min="4" max="40" value="15">&deg;C.
+  <!-- A blender is selected -->
+  <div name="blender-sel" class="hidden">
+    <div>
+      The ambient temperature is around <input id="nox_t" name="temperature" data-msg="Must be between 4 and 40" required type="number" class="integer2" min="4" max="40" value="15">&deg;C.
+    </div>
+    Fill a
+    <input id="nox_cs" name="cylinder_size" data-msg="Must be between 1ℓ and 30ℓ" required type="number" class="integer2" min="1" max="30" value="12">ℓ cylinder containing
+    <input id="nox_sp" name="start_pressure" required type="number" class="integer3" min="1" max="300" value="50"> bar of
+    <input id="nox_sm" name="start_mix" data-msg="Must be between 21% and 100%" required type="number" class="integer3" min="21" max="100" value="21">%
+    to 
+    <input id="nox_tp" name="target_pressure" data-msg="Must be between 0 and 250 bar" required type="number" class="integer3" min="1" max="300" value="232"> bar with 
+    <input id="nox_tm" name="target_mix" data-msg="Must be between 21% and 100%" required type="number" class="integer3" min="21" max="100" value="32">%
+    <div>
+	  <label for="nox_ppO2max">
+	    A maximum ppO<sub>2</sub> of
+	  </label>
+	  <input id="nox_ppO2max" type="number" class="floating_point" step="0.1" required name="ppO2max" min="0" max="2" value="1.4"> bar gives a MOD of <b><span id="nox_MOD"></span>m</b>
+    </div>
+    <div>
+	  Use bank cylinders:
+	  <div class="nox_o2_bank" style="display:inline">
+	    <!-- filled by code -->
+	  </div>
+	  <button name="fix_bank">Fix bank pressures</button>
+    </div>
+    <div name="report">
+    </div>
+    <button name="add_record">Touch here to record this mix</button>
+    <div id="action-templates" style="display:none">
+      <div name="Bleed">Drain the cylinder down to ${Math.round(a.to_bar)} bar.</div>
+      <div name="AddFromBank">Add O<sub>2</sub> to ${Math.round(a.to_bar)} bar from bank ${a.bank}, using ${Math.round(a.used_l)}L and leaving ${Math.round(a.left_bar)} bar in the bank.</div>
+      <div name="TopUp">Top up with air to ${Math.round(a.to_bar)} bar.</div>
+      <div name="Pay">Pay &pound;${a.cost_gbp.toFixed(2)}.</div>
+      <div name="Impossible"><b>Sorry, fill is not possible.</b></div>
+    </div>
+    <div class="hidden info" id="infoBankSize">
+      This is the size of the O<sub>2</sub> cylinder you intend to
+      use. A 'J' cylinder is 47.2L, while a 'W' is 45.7L. Check the
+      shoulder of the cylinder you are using if you are unsure. Always
+      use the lowest pressure cylinder that has enough for the
+      fill you want
+    </div>
   </div>
-  Fill a
-  <input id="nox_cs" name="cylinder_size" data-msg="Must be between 1ℓ and 30ℓ" required type="number" class="integer2" min="1" max="30" value="12">ℓ cylinder containing
-  <input id="nox_sp" name="start_pressure" required type="number" class="integer3" min="1" max="300" value="50"> bar of
-  <input id="nox_sm" name="start_mix" data-msg="Must be between 21% and 100%" required type="number" class="integer3" min="21" max="100" value="21">%
-  to 
-  <input id="nox_tp" name="target_pressure" data-msg="Must be between 0 and 250 bar" required type="number" class="integer3" min="1" max="300" value="232"> bar with 
-  <input id="nox_tm" name="target_mix" data-msg="Must be between 21% and 100%" required type="number" class="integer3" min="21" max="100" value="32">%
-  <div>
-	<label for="nox_ppO2max">
-	  A maximum ppO<sub>2</sub> of
-	</label>
-	<input id="nox_ppO2max" type="number" class="floating_point" step="0.1" required name="ppO2max" min="0" max="2" value="1.4"> bar gives a MOD of <b><span id="nox_MOD"></span>m</b>
-  </div>
-  <div>
-	Use bank cylinders:
-	<div class="nox_o2_bank" style="display:inline">
-	  <!-- filled by code -->
-	</div>
-	<button name="fix_bank">Fix bank pressures</button>
-  </div>
-  <div name="report">
-  </div>
-  <button name="add_record">Touch here to record this mix</button>
-  <div id="action-templates" style="display:none">
-    <div name="Bleed">Drain the cylinder down to ${Math.round(a.to_bar)} bar.</div>
-    <div name="AddFromBank">Add O<sub>2</sub> to ${Math.round(a.to_bar)} bar from bank ${a.bank}, using ${Math.round(a.used_l)}L and leaving ${Math.round(a.left_bar)} bar in the bank.</div>
-    <div name="TopUp">Top up with air to ${Math.round(a.to_bar)} bar.</div>
-    <div name="Pay">Pay &pound;${a.cost_gbp.toFixed(2)}.</div>
-    <div name="Impossible"><b>Sorry, fill is not possible.</b></div>
-  </div>
-  <div class="hidden info" id="infoBankSize">
-    This is the size of the O<sub>2</sub> cylinder you intend to
-    use. A 'J' cylinder is 47.2L, while a 'W' is 45.7L. Check the
-    shoulder of the cylinder you are using if you are unsure. Always
-    use the lowest pressure cylinder that has enough for the
-    fill you want
-  </div>
-</div>
 
-<div id="fix_bank_dialog" class="hidden" title="Enter correct bank levels">
-  Enter measured pressure in bank cylinders. Only change what you have personally measured with the whip gauge!
-  <div name="banks">
+  <div id="fix_bank_dialog" class="hidden" title="Enter correct bank levels">
+    Enter measured pressure in bank cylinders. Only change what you have personally measured with the whip gauge!
+    <div name="banks">
+    </div>
   </div>
-</div>
-
+</form>
+<!-- computed actions -->
 <div id="action-templates" class="hidden">
   <div name="Bleed">Bleed cylinder down to ${floor(a.to_bar)} bar
 	${morethan(a.wasted_l*this.O2_gbp,0.01)?"(losing O<sub>2</sub> worth about £" + about(a.wasted_l*this.O2_gbp) + ")":""} (${round(a.drained_l/100)} mins)
@@ -77,5 +79,5 @@
   <div name="Pay">
 	You should pay the club £${Math.ceil(a.cost_gbp * 100) / 100}
 	for the O<sub>2</sub> used from the bank
-  </div>
+    </div>
 </div>

@@ -3,12 +3,12 @@
   <head>
     <meta name="copyright" content="Copyright (C) 2018-2025 Crawford Currie http://c-dot.co.uk license MIT">
     <meta charset="UTF-8">
-    <meta name="Description" content="Sheds">
+    <meta name="Description" content="Dive Club Stores">
     <meta name="cache-control" content="public">
     <meta name="cache-control" content="max-age=0">
     <meta name="expires" content="BUILD_DATE">
     <meta name="build_date" content="BUILD_DATE">
-    <title>Sheds</title>
+    <title>Dive Club Stores</title>
     <!--base href="app"> DON'T DO THIS - it'll banjax jquery-ui.tabs -->
     <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
 
@@ -33,7 +33,7 @@
 
     <link href="app/css/with-info.css" rel="stylesheet">
     <link href="app/css/in-place.css" rel="stylesheet">
-    <link href="app/css/Sheds.css?wtf=1" rel="stylesheet">
+    <link href="app/css/App.css?wtf=1" rel="stylesheet">
 
     <link href="app/node_modules/font-awesome/css/font-awesome.css" rel="stylesheet">
 
@@ -57,8 +57,8 @@
       Loading...
     </div>
     
-    <!-- console will move to console_dialog once loading is complete -->
-    <div id="console""></div>
+    <!-- #console will be prepended to #console_dialog once loading is complete -->
+    <div id="console"></div>
 
     <div id="loaded" class="hidden fullscreen">
       <div id="main_tabs">
@@ -67,12 +67,11 @@
           <span id="open_console" class="fa fa-bug"></span>
         </div>
         <ul style="margin-right:1.2em">
+          <!-- add class="hidden" to tabs to disable them -->
           <li><a href="#fixed" data-class="Compressor">Fixed Compressor</a></li>
-		  <!-- DISABLED UNTIL SOMEONE WANTS THESE PAGES
-               <li><a href="#portable" data-class="Compressor">Portable Compressor</a></li>
+          <li><a href="#portable" data-class="Compressor">Portable Compressor</a></li>
           <li><a href="#loans" data-class="Loans">Loans</a></li>
           <li><a href="#inventory" data-class="Inventory">Inventory</a></li>
-		  <!-- -->
           <li><a href="#nitrox" data-class="Nitrox">Nitrox</a></li>
         </ul>
 	  </div>
@@ -229,6 +228,17 @@
         </tr><tr><td>Pass:</td>
           <td class="widest"><input class="widest" type='password' name='pass'></td>
       </tr></table>
+    </div>
+
+    <div id="connect_failed_dialog" class="hidden" title="Connect failed">
+      Could not connect to the database at '<span class="url"></span>'
+      <br />
+      Provide the correct information, or click "Use sensor server".
+      <br />
+      <label for="database_url">URL</label>
+      <input type="text" id="database_url" name="database_url">
+      <label for="use_webdav">Using WebDAV</label>
+      <input type="checkbox" id="use_webdav" name="use_webdav">
     </div>
 
     <div id="alert_dialog" class="hidden" title="Alert">

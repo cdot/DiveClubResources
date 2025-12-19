@@ -2,7 +2,8 @@
 /* eslint-env browser,jquery */
 
 import { Entries } from "./Entries.js";
-import "./jq/in-place.js";
+import "./jq/edit-in-place.js";
+import "./jq/select-in-place.js";
 
 /**
  * Entries for Loan events. These can be edited in place.
@@ -88,6 +89,7 @@ class Loans extends Entries {
 				if (new Date(this.capture.date) > new Date())
 					bad.push("date");
 			} catch (e) {
+        console.debug(e);
 				bad.push("date");
 			}
 			if (this.capture.item == DEFAULTS.item)
@@ -96,16 +98,19 @@ class Loans extends Entries {
 				if (parseInt(this.capture.count) < 0)
 					bad.push("count");
 			} catch (e) {
+        console.debug(e);
 				bad.push("count");
 			}
 			try {
 				if (parseFloat(this.capture.donation) < 0)
 					bad.push("donation");
 			} catch (e) {
+        console.debug(e);
 				bad.push("donation");
 			}
+      const $tab = this.$tab;
 			Promise.all([
-				this.sheds.roles.find("role", "member")
+				this.app.roles.find("role", "member")
 				.then(row => {
 					if (row.list.split(",").indexOf(this.capture.borrower) < 0)
 						bad.push("borrower");
@@ -113,7 +118,7 @@ class Loans extends Entries {
 				.catch(() => {
 					bad.push("borrower");
 				}),
-				this.sheds.roles.find("role", "operator")
+				this.app.roles.find("role", "operator")
 				.then(row => {
 					if (row.list.split(",").indexOf(this.capture.lender) < 0)
 						bad.push("lender");
@@ -133,7 +138,7 @@ class Loans extends Entries {
 					});
 				} else {
 					$.each(bad, function (i, e) {
-						this.$tab.find("#loan_dlg_" + e).addClass("error");
+						$tab.find("#loan_dlg_" + e).addClass("error");
 					});
 				}
 			});
@@ -192,6 +197,10 @@ class Loans extends Entries {
     return $td;
   }
 
+  /**
+   * Construct a select field, for Borrower and Lender and Returned fields
+   * @private
+   */
   mod_select($td, field, set) {
     let entry = this.capture;
     if (typeof $td === "number") {
@@ -205,9 +214,9 @@ class Loans extends Entries {
     .off("click")
     .on("click", () => {
       $td.removeClass("error");
-      this.sheds.roles.find("role", set)
-      .then(function(row) {
-        $(this).select_in_place({
+      this.app.roles.find("role", set)
+      .then(row => {
+        $td.select_in_place({
           changed: s => {
             if (s != entry[field]) {
               entry[field] = s;
@@ -221,16 +230,21 @@ class Loans extends Entries {
           options: row.list.split(",")
         });
       })
-      .catch(() => {
+      .catch(e => {
+        console.debug(e);
         $.alert({
-          title: set + " list",
-          content: "Not found"
+          title: `'${set}' list`,
+          content: e.toString()
         });
       });
     });
     return $td;
   }
 
+  /**
+   * Construct a Date field
+   * @private
+   */
   mod_date($td, field) {
     let entry = this.capture;
     if (typeof $td === "number") {
@@ -264,6 +278,10 @@ class Loans extends Entries {
     return $td;
   }
 
+  /**
+   * Construct an inventory item field, for Item field
+   * @private
+   */
   mod_item($td, field) {
     let entry = this.capture;
     if (typeof $td === "number") {

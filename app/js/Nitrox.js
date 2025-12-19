@@ -27,24 +27,23 @@ class Nitrox extends Entries {
    */
   O2_gbp = 1000000;
 
+  /**
+   * Pending reports, waiting to be pushed into the Entries when
+   * the button is pushed.
+   */
+  reports = [];
+
   init(params) {
 		return super.init($.extend(params, {
 			file: "nitrox.csv",
       keys: {
+        // Type map
         date: "Date",
-
         blender: "string",
-				cylinder: "number",
-				contains_bar: "number",
-				contains_o2: "number",
-
-				target_bar: "number",
-				target_o2: "number",
-
-				bank_used: "number",
-				bank_bar: "number",
-
-				achieved_o2: "number"
+        bank: "string",
+        litres: "number",
+        bar_left: "number",
+        cost: "number"
       }
 		}));
 	}
@@ -94,6 +93,10 @@ class Nitrox extends Entries {
 				$tab.find("[name=no-blender-sel]").show();
 			}
 		});
+
+    $tab.find("button[name='add_record']")
+		.on("click", () => this._addO2Record())
+    .button("option", "disabled", true);
 
     return super.attachHandlers();
 	}
@@ -151,14 +154,14 @@ class Nitrox extends Entries {
     return this.loadFromStore()
     .then(() => {
       if (this.length() > 0) {
-			  console.debug("Loading " + this.length() + " o2 records");
+			  console.debug(`Loading ${this.length()} O2 records`);
 			  for (let i = 0; i < this.length(); i++) {
 				  const cur = this.get(i);
 				  // adjust
-				  banks[cur.bank_used].bar = cur.bank_bar;
+				  banks[cur.bank].bar = cur.bar_left;
 				  this.$tab
-				  .find(`[name='bank_${cur.bank_used}']`)
-				  .text(cur.bank_bar);
+				  .find(`[name='bank_${cur.bank}']`)
+				  .text(cur.bar_left);
 			  }
         this.recalculate();
       } else
@@ -218,7 +221,7 @@ class Nitrox extends Entries {
     // O2_bank_size: litres
     // O2_bank_pressure: bar
     // ppO2max: max ppO2
-    this.$tab.find("input").each(function () {
+    this.$tab.find(":input").each(function () {
       if (this.type === "number")
         conditions[this.name] = parseFloat($(this).val());
       else
@@ -229,10 +232,14 @@ class Nitrox extends Entries {
                             / conditions.target_mix - 1) * 10);
     $("#nox_MOD").text(MOD);
 
+    // Actions list used to fill in template for display in HTML
 		const actions = [];
+    // Report that is saved to Entries
+    const reports = this.reports = [];
+    const blender = this.$tab.find("[name=blender]").val();
 		//let drained_l = 0;
 		//let wasted_l = 0;
-		//let used_l = 0;
+		let used_l = 0;
 		let cost_gbp = 0;
 		function action(a) {
 			actions.push(a);
@@ -242,7 +249,14 @@ class Nitrox extends Entries {
 				//wasted_l += a.wasted_l;
 				break;
 			case "AddFromBank":
-				//used_l += a.used_l;
+				reports.push({
+          date: new Date(),
+          blender: blender,
+          bank: a.bank,
+          litres: a.used_l,
+          bar_left: a.left_bar,
+          cost: a.cost_gbp
+        });
 				cost_gbp += a.cost_gbp;
 				break;
 			}
@@ -294,13 +308,37 @@ class Nitrox extends Entries {
 
     const $report = this.$tab.find("[name=report]");
     if (filler.blend(banks)) {
-			if (cost_gbp > 0)
+			if (cost_gbp > 0) {
 				actions.push({
 					action: "Pay",
 					cost_gbp: cost_gbp
 				});
+        // Enable record keeper
+        this.$tab
+        .find("button[name='add_record']")
+        .button("option", "disabled", false);
+      } else {
+        this.cost_gbp = 0;
+        this.last_fill = undefined;
+        // disable record keeper
+        this.$tab
+        .find("button[name='add_record']")
+        .button("option", "disabled", true);
+      }
     }
 		$report.html(this.expandActions(actions));
+  }
+
+  _addO2Record() {
+		console.debug("Adding O2 record", this.reports);
+    for (const r of this.reports)
+      this.push(r);
+    this.reports = [];
+    this.$tab
+    .find("button[name='add_record']")
+    .button("option", "disabled", true);
+    this.save()
+    .then(() => this.play_record());
   }
 }
 

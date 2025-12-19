@@ -5,7 +5,7 @@
  * Network latency in our system is at most a few milliseconds, which is
  * is irrelevant as far as sampling is concerned. At the same time, running
  * ntp is an unwelcome burden. It is simpler to keep the sensor server and
- * the sheds app in sync by using the timestamp on requests coming in to
+ * the app in sync by using the timestamp on requests coming in to
  * the sensor. That's what this class handles.
  */
 

@@ -27,9 +27,9 @@ class GetPostStore extends AbstractStore {
 
   // @override
   connect(url) {
-    console.debug("GetPostStore: root at " + url);
+    console.debug(`GetPostStore.connect(${url})`);
     this.url = url;
-    return Promise.resolve();
+    return Promise.resolve(this);
   }
 
   // @override
@@ -41,7 +41,7 @@ class GetPostStore extends AbstractStore {
   // @override
   read(path) {
     const url = `${this.url}/${path}`;
-    console.debug(`GetPostStore.read(${url})`);
+    console.debug(`GetPostStore.read ${url}`);
     return $.get(url, null, null, "text");
   }
 

@@ -12,7 +12,6 @@ function UNit() {};
  * * global.DOM
  * * global.window
  * * global.document
- * * global.navigator
  * * global.jQuery
  * * global.$
  * call in before(). jQuery will be re-used between combined tests
@@ -97,7 +96,6 @@ function setup$(url, html) {
       global.DOM = dom;
       global.window = DOM.window;
       global.document = DOM.window.document;
-      global.navigator = { userAgent: "node.js" };
       global.$ = global.jQuery = jquery(window);
       assert($.ajax);
       assert.equal(jQuery.ajax, $.ajax);

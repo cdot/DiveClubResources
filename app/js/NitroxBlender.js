@@ -47,7 +47,7 @@ const AIR = 0.209; // fraction of O2 in air
  * * Pf - fill pressure (Pd = Ps + Pf + Pt)
  * * Pd - target pressure (bar)
  * * Ps - target mix, fraction of O2
- * * Mt - top-up mix, fracion of O2
+ * * Mt - top-up mix, fraction of O2
  * * Pt - top-up pressure (Pd = Ps + Pf + Pt)
  */
 class NitroxBlender {

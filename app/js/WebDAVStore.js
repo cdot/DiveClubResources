@@ -27,7 +27,7 @@ class WebDAVStore extends AbstractStore {
 
   // @override
   connect(url) {
-    if (url && url.lastIndexOf('/') !== url.length - 1)
+    if (url && this.url.lastIndexOf('/') !== this.url.length - 1)
       url += '/';
 
     const getUrl = window.location;
@@ -44,8 +44,8 @@ class WebDAVStore extends AbstractStore {
       }
     }
 
-    console.debug("WebDAVStore: connecting to " + url);
-    var opts = {
+    console.debug(`WebDAVStore: connecting to ${url}`);
+    const opts = {
       baseUrl: url
     };
     if (this.user) {
@@ -53,7 +53,9 @@ class WebDAVStore extends AbstractStore {
       opts.password = this.pass;
     }
     this.DAV = new DAVClient(opts);
-    return this.read("/");
+    // Read the root to force an error if connection failed
+    return this.read("/")
+    .then(() => this);
   }
 
   // @override
@@ -100,7 +102,7 @@ class WebDAVStore extends AbstractStore {
         if (200 <= res.status && res.status < 300) {
           return Promise.resolve();
         } else if (res.status === 404) {
-          var p = path.slice();
+          const p = path.slice();
           p.pop();
           return self._mkpath(p).then(() => {
             return self.DAV.request('MKCOL', path.join('/'));
@@ -119,7 +121,7 @@ class WebDAVStore extends AbstractStore {
     console.debug("WebDAVStore: Writing " + path);
 
     path = path.replace(/^\/+/, "").split('/');
-    var folder = path.slice();
+    const folder = path.slice();
     folder.pop();
 
     if (!this.DAV)

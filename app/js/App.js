@@ -6,7 +6,6 @@
  */
 
 import { Config } from "./Config.js";
-import { GetPostStore } from "./GetPostStore.js";
 import { Entries } from "./Entries.js";
 import { Roles } from "./Roles.js";
 
@@ -30,9 +29,7 @@ function tick() {
   window.setTimeout(tick, when);
 }
 
-window.SERVER_URL = String(window.location).replace(/\?.*/, "");
-
-class Sheds {
+class App {
 
   /**
    * @param {object} params parsed from the URL in main.js
@@ -41,6 +38,7 @@ class Sheds {
    * (such as Android Webview)
    */
   constructor(params) {
+
     /**
      * The app console (a div) is initially open, but is closed
      * after loading unless this is true.
@@ -50,13 +48,22 @@ class Sheds {
     this.keepConsoleOpen = params.console;
 
     /**
-     * Configuration. The default uses a GetPostStore.
+     * Default configuration.
      * @member {Config}
      */
     this.config = new Config(
-      new GetPostStore(),
+      undefined,
       {
         loan_return: 10,
+
+        features: {
+          fixed: true,
+          portable: true,
+          loans: true,
+          inventory: true,
+          nitrox: true
+        },
+
         o2: {
 					price: 0.01,
 					bank: { // random numbers
@@ -109,7 +116,7 @@ class Sheds {
    * @override
    */
   reloadUI() {
-    console.debug("Reloading UI");
+    console.debug("reloadUI:");
     return Promise.all(
       Object.values(this)
 			.filter(f => f instanceof Entries)
@@ -120,6 +127,10 @@ class Sheds {
     });
   }
 
+  /**
+   * Update the local database from the remote read-only database.
+   * @param {function} report progress reporting function(css_class, string)
+   */
   update_from_web(report) {
     if (!this.config.get("db_index_url")) {
       $.alert({
@@ -128,9 +139,11 @@ class Sheds {
       });
       return Promise.reject(new Error("Cannot update form web"));
     }
-    console.debug("Updating from read-only database");
+    console.debug("update_from_web:");
     return new Entries()
     .init({
+      id: "RO index",
+      store: this.config.store,
       url: this.config.get("db_index_url"),
       keys: {
         sheet: "string",
@@ -160,12 +173,14 @@ class Sheds {
   }
 
   /**
+   * Initialise UI components and attach handlers
    * @return Promise
    */
   initialise_ui() {
+
     // If tabs aren't working, check there's no base tag in <meta>
     $("#main_tabs").tabs();
-    console.debug("Tabs built");
+    console.debug("initialise_ui: tabs built");
 
     // Generics
     $(".spinner").spinner();
@@ -251,28 +266,192 @@ class Sheds {
 
   /**
    * Load config.json from the database url, or write a draft
-   * @param {string} url the url to load from
-   * @param {boolean} no_draft true if we shouldn't try to save a draft
+   * @private
    */
-  setup_database(url, no_draft) {
-    console.debug(`setup_database: setting up store at ${url}`);
-    return this.config.store
-    .connect(url)
-    .then(() => {
-      console.debug(`setup_database: Connected to ${url}, loading config`);
+  setup_database() {
+    console.debug("setup_database:");
+    return this.config.load()
+    .catch(e => {
+      console.debug("setup_database: config load failed:", e.toString());
+      // Carry on with defaults
+    })
+    .always(() => 
+			// Reset all Entries
+			Promise.all(Object
+								  .values(this)
+								  .filter(f => f instanceof Entries)
+								  .map(f => {
+                    f.store = this.config.store;
+                    return f.reset();
+                  }))
+			.then(() => $(document).trigger("reload_ui")));
+  }
+
+  /**
+   * If the database_connect fails, the database_url cookie may not
+   * be set up or may be incorrect. Prompt for a better url.
+   * @param {string} url URL we failed to connect to
+   * @param {boolean} use_webdav true to use webdav
+   * @return {Promise} resolves to an AbstractStore
+   * @private
+   */
+  database_reconnect(url, use_webdav) {
+		const app = this;
+    const server_url = String(window.location).replace(/\?.*/, "") + "data";
+    return new Promise(resolve => {
+      $.confirm({
+        title: $("#connect_failed_dialog").prop("title"),
+        content: $("#connect_failed_dialog").html(),
+        onContentReady: function () {
+          const $dlg_body = this.$content;
+          $dlg_body.find("[name=database_url]").text(url);
+          $dlg_body .find("[name=use_webdav]").prop("checked", use_webdav);
+        },
+        buttons: {
+          use_sensor_server: {
+            text: "Use sensor server",
+            action: () => {
+              console.debug(`database_reconnect: using sensor server ${server_url}`);
+              resolve(app.database_connect(server_url, false));
+            }
+          },
+          use_provided_information: {
+            text: "Use provided information",
+            action: () => {
+              const $dlg_body = this.$content;
+              const nurl = $dlg_body.find("[name=database_url]").val();
+              const ndav = $dlg_body.find("[name=use_webdav]").is("checked");
+              console.debug(`database_reconnect: using ${ndav?"WebDAV":""} server ${nurl}`);
+              resolve(app.database_connect(nurl, ndav));
+            }
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * If the database server requires authentication, then authenticate.
+   * @param {string} url URL we are connecting to
+   * @return {Promise} promise that resolves when authentication is compete
+   * @private
+   */
+  authenticate(url) {
+    const app = this;
+    return new Promise(resolve => {
+      $.confirm({
+        title: $("#auth_required").prop("title"),
+        content: $("#auth_required").html(),
+        onContentReady: function () {
+          this.$content.find(".url").text(url);
+          this.$content
+					.find("input[name='pass']")
+					.on("change", () => {
+						this.$$login.trigger("click");
+					});
+        },
+        buttons: {
+          login: function () {
+            const user = this.$content
+								  .find("input[name='user']").val();
+            const pass = this.$content
+								  .find("input[name='pass']").val();
+            app.config.store.setCredentials(user, pass);
+            resolve(app.database_connect(url));
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * Try a first time connection to the database.
+   * @param {string} url the database URL
+   * @param {boolean} use_webdav true to use webdav
+   * @return {Promise} resolves to an AbstractStore
+   * @private
+   */
+  database_connect(url, use_webdav) {
+    console.debug("database_connect: trying ", url);
+    const store_mod = use_webdav ? "WebDAVStore" : "GetPostStore";
+    return import(`./${store_mod}.js`)
+    .then(mods => new mods[store_mod]())
+    .then(store => store.connect(url))
+    .then(store => {
+      this.config.store = store;
+      console.debug(`database_connect: connected to ${url}, loading config.json`);
       return this.config.load()
-      .catch(e => {
-        console.debug("Config.load: failed:", e);
-        // Carry on with defaults
-        alert("Failed to load database configuration, probably because config.json couldn't be found. You should check the configuration and save it. Continuing with defaults.");
+      .then(() => {
+        Cookies.set("database_url", url, {
+          expires: 365
+        });
+
+				return store;
       })
-      .always(() => 
-				// Reset all Entries
-				Promise.all(Object
-								    .values(this)
-								    .filter(f => f instanceof Entries)
-								    .map(f => f.reset()))
-				.then(() => $(document).trigger("reload_ui")));
+      .catch(e => {
+        console.debug("database_connect: config.json load failed:", e);
+        return new Promise(resolve => {
+          $.confirm({
+            title: "Failed to load config.json from database",
+            content: "You can retry with a different URL or continue with defaults",
+            buttons: {
+              retry: {
+                tect: "Retry",
+                action: () => this.database_reconnect(url, use_webdav)
+              },
+              defaults: {
+                text: "Use defaults",
+                action: () => resolve(store)
+              }
+            }
+          });
+        });
+      });
+    })
+    .catch(e => {
+      console.debug(`database_connect: ${url} connect failed`, e.toString());
+      if (e.status === 401) {
+        // XMLHttpRequest will only prompt for credentials if
+        // the request is for the same origin with no explicit
+        // credentials. In any other configuration, it won't prompt
+        // So we have to handle credentials if we get a 401.
+        console.debug("database_connect: auth failure, prompting");
+        return this.authenticate(url);
+      }
+      // Trying to repeatedly connect doesn't provide any
+      // useful feedback. Rejecting at least gives a chance
+      // to feeback.
+      if (e.html)
+        $("#loading").html(e.html);
+      return Promise.reject(new Error("Could not connect to " + url));
+    });
+  }
+
+  /**
+   * Connect to the database. The database URL is cached in a cookie.
+   * @private
+   */
+  connect_to_database() {
+    let promise;
+    const cookie = Cookies.get("database_url");
+    let url = "", use_webdav = false;
+    if (cookie) {
+      console.debug(`connect_to_database: Cookie ${cookie}`);
+      const bits = cookie.split("|");
+      url = bits[0], use_webdav = bits[1];
+    } else
+      console.debug(`connect_to_database: no Cookie`);
+
+    if (typeof url === "undefined" || url.length === 0)
+      promise = this.database_reconnect(url, use_webdav);
+    else
+      promise = this.database_connect(url, use_webdav);
+
+    return promise
+    .then(() => console.debug(`connect_to_database: ${url} connected`))
+    .catch(e => {
+      console.debug(`connect_to_database: failure`, e.toString());
+      console.error("connect_to_database: failure", e, url);
     });
   }
 
@@ -288,7 +467,7 @@ class Sheds {
           return new Tab()
           .init({
 						config: this.config,
-						sheds: this,
+						app: this,
 						id: id,
 						store: this.config.store
 					});
@@ -299,11 +478,12 @@ class Sheds {
 		});
 		return Promise.all(requires)
     .then(() => this.initialise_ui())
-    .then(() => this.setup_database(`${window.SERVER_URL}data`))
+    .then(() => this.connect_to_database())
+    .then(() => this.setup_database())
     .catch(e => {
       console.error(`Failed to setup store`, e);
     });
   }
 }
 
-export { Sheds }
+export { App }

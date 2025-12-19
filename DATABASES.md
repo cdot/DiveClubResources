@@ -1,22 +1,20 @@
 # Databases
 
-Two databases are used, a read-write cache database, and a read-only
-text file database held on a remote service (such as Google Drive.)
+Two databases are used, a read-write application database, and a read-only
+text file database held on a remote service (such as Google Drive).
 
 ## Local database
 
-The local database contains:
-* a cached copy of the text files in the remote DB,
+The application database contains:
+* a copy of the text files in the remote DB,
 * a number of data files maintained by the application, such as
-  compressor and loan records
+  compressor and loan records,
 * `config.json` which stores most of the configuration.
 
-Included in the distribution is an interface suitable for using a
-WebDAV server as the cache server. It would be easy to extend the
-application to interface to a different store provider, should you
-need to do so.
+The application only stores plain-text CSV files in the application database. It can use a simple server that supports GET and POST requests (GetPostStore), or a WebDAV server (WebDAVStore). It would be easy to extend the
+application to interface to a different store provider, should you want to.
 
-The cache server is accessed through the *Local cache URL* which
+The spplication server is accessed through the *Local cache URL* which
 points to the root folder of the cache. This setting is stored in the
 `cache_url` cookie in the browser. The cookie can be
 initialised/overridden by the `?cache_url=` URL parameter when the

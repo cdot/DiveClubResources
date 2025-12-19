@@ -22,6 +22,9 @@ const HEAD_TYPES = {
 // edit the .csv file
 const HISTORY_TRS = 50;
 
+// Base URL for sensors
+const SENSOR_URL = String(window.location).replace(/\?.*/, "");
+
 /**
  * Compressor runtime events page.
  */
@@ -353,10 +356,10 @@ class Compressor extends Entries {
     // Adjust validation rules, if validation is supported
     if (typeof this.runtime.rules === "function") {
       this.$runtime.rules("remove", "min");
-      throw new Error("r not defined");
-      this.$runtime.rules("add", {
+      /*this.$runtime.rules("add", {
         min: r + 1 / (60 * 60) // 1 second 1
-      });
+      });*/
+      throw new Error("r not defined");
     }
   }
 
@@ -366,7 +369,7 @@ class Compressor extends Entries {
    * for a sensor
    */
   _getSample(name) {
-    const url = `${window.SERVER_URL}${name}`;
+    const url = `${SENSOR_URL}${name}`;
     return $.getJSON(url, {
       t: Date.now() // defeat cache
     });
@@ -614,17 +617,7 @@ class Compressor extends Entries {
                  + this._remainingFilterLife() + " hours");
       return this.save();
     })
-    .then(() => {
-      if (typeof Audio !== "undefined") {
-        const pick = Math.floor(Math.random() * 122);
-        try {
-          const snd = new Audio(`app/sounds/${pick}.mp3`);
-          snd.play();
-        } catch (e) {
-          console.debug("Cannot play", e);
-        }
-      }
-    })
+    .then(() => this.play_record())
     .then(() => this.reloadUI());
   }
 

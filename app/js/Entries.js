@@ -27,7 +27,7 @@ import "jquery";
  *
  * In either case getHeads() will return a list of column headings.
  *
- * Note that the first row in the laoded array is used to determine
+ * Note that the first row in the loaded array is used to determine
  * the keys when saving. Keys in later entries that are not in the
  * first entry will be lost.
  *
@@ -97,12 +97,12 @@ class Entries {
   file = undefined;
 
   /**
-   * Optional pointer to the containing Sheds app. Not used
+   * Optional pointer to the containing App. Not used
    * by this class, but subclasses will use it to cross-reference
    * between tabs.
-   * @member {Sheds}
+   * @member {App}
    */
-  sheds = undefined;
+  app = undefined;
 
 	/**
 	 * @param {object} params parameters. Any of the fields may
@@ -459,7 +459,7 @@ class Entries {
       try {
         return val.toISOString();
       } catch (e) {
-        debugger;
+        console.debug(e);
       }
     }
     return val;
@@ -482,6 +482,19 @@ class Entries {
       datum.push(this.serialise(key, val));
     }
     return datum;
+  }
+
+  play_record() {
+    if (typeof Audio !== "undefined") {
+      // Sounds are numbered 0..130
+      const pick = Math.floor(Math.random() * 131);
+      try {
+        const snd = new Audio(`app/sounds/${pick}.mp3`);
+        snd.play();
+      } catch (e) {
+        console.debug("Cannot play", e);
+      }
+    }
   }
 }
 

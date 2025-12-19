@@ -1,24 +1,16 @@
 /*@preserve Copyright (C) 2018-2024 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env browser, jquery */
-/* global require */
 
 import { Entries } from "./Entries.js";
 import "./jq/with-info.js";
 
-// Inventory columns that are NOT to be used in a descriptor
-const hide_cols = {
-  "Kit Pool": true,
-  "Location": true,
-  "Count": true
-};
-
+/**
+ * Get a descriptor string for a loan from the first three columns
+ * of an inventory sheet
+ * @private
+ */
 function getLoanDescriptor(sheet, entry) {
-  var desc = [sheet.Class];
-  for (var ci = 0; ci < sheet.heads.length; ci++) {
-    if (!hide_cols[sheet.heads[ci]])
-      desc.push(entry[ci]);
-  }
-  return desc.join(",");
+  return `${sheet.Class} ${entry[0]}: ${entry[1]} ${entry[2]}`;
 }
 
 class Inventory extends Entries {
@@ -59,35 +51,35 @@ class Inventory extends Entries {
    * adding the inventory_chosen class to it
    */
   select_picked($dlg) {
-    var picked = $dlg.data("picked");
+    const picked = $dlg.data("picked");
     if (typeof picked === "undefined" || picked == "")
       return;
 
-    var sheet = picked.replace(/,.*$/, "");
+    let sheet = picked.replace(/,.*$/, "");
     $dlg.find(".inventory_chosen").removeClass("inventory_chosen");
 
     if (!this.data)
       return;
 
-    var si = this.data.findIndex(e => e.Class == sheet);
+    const si = this.data.findIndex(e => e.Class == sheet);
     if (si < 0)
       return;
 
-    var $tabs = $dlg.children().first();
-    var $tab = $(($tabs.children())[si + 1]);
+    const $tabs = $dlg.children().first();
+    const $tab = $(($tabs.children())[si + 1]);
     $tabs.tabs("option", "active", si);
 
     // Find the best match among the entries on this sheet
     sheet = this.data[si];
-    var ents = sheet.entries;
-    var ei = ents.findIndex(e => {
+    const ents = sheet.entries;
+    const ei = ents.findIndex(e => {
       return getLoanDescriptor(sheet, e) == picked;
     });
 
     if (ei >= 0) {
-      var $trs = $tab.find("tr");
+      const $trs = $tab.find("tr");
       // +1 to skip header row
-      var tr = $trs[ei + 1];
+      const tr = $trs[ei + 1];
       $(tr).addClass("inventory_chosen");
     }
   }
@@ -118,24 +110,23 @@ class Inventory extends Entries {
    * @param $it the tabs div
    */
   populate_tab($it) {
-    var inventory = this.data;
-    var hide_cols = {};
+    const inventory = this.data;
+    const hide_cols = {};
     const self = this;
     
     function fill_sheet(sheet) {
-      var nc = sheet.heads.length,
-          ci,
+      const nc = sheet.heads.length,
           showCol = {},
           colIndex = {};
 
       function make_row(ei) {
         // Make a copy, as we may modify Count
-        var entry = [].concat(sheet.entries[ei]);
-        var $tr = $("<tr></tr>");
-        var desc = getLoanDescriptor(sheet, entry);
+        const entry = [].concat(sheet.entries[ei]);
+        const $tr = $("<tr></tr>");
+        const desc = getLoanDescriptor(sheet, entry);
         $tr.data("loan_desc", desc);
-        var on_loan = self.sheds.loans.number_on_loan(desc);
-        var can_pick = true;
+        const on_loan = self.app.loans.number_on_loan(desc);
+        let can_pick = true;
         if (on_loan > 0) {
           if (typeof colIndex.Count === "undefined") {
             $tr.addClass("inventory_on_loan");
@@ -151,22 +142,22 @@ class Inventory extends Entries {
         }
         if (can_pick)
           $tr.on("click", function () {
-            var $dlg = $("#inventory_pick_dialog");
+            const $dlg = $("#inventory_pick_dialog");
             $dlg.dialog("close");
-            var handler = $dlg.data("handler");
+            const handler = $dlg.data("handler");
             if (typeof handler === "function")
               handler($(this).data("loan_desc"));
           });
-        for (ci = 0; ci < nc; ci++) {
+        for (let ci = 0; ci < nc; ci++) {
           if (showCol[ci])
             $tr.append("<td>" + entry[ci] + "</td>");
         }
         return $tr;
       }
 
-      var $table = $("<table class='inventory_table zebra'></table>");
-      var $tr = $("<tr></tr>");
-      for (ci = 0; ci < nc; ci++) {
+      const $table = $("<table class='inventory_table zebra'></table>");
+      const $tr = $("<tr></tr>");
+      for (let ci = 0; ci < nc; ci++) {
         colIndex[sheet.heads[ci]] = ci;
         if (!hide_cols[sheet.heads[ci]]) {
           $tr.append("<th>" + sheet.heads[ci] + "</th>");
@@ -175,7 +166,7 @@ class Inventory extends Entries {
       }
       $table.append($tr);
 
-      for (var ei = 0; ei < sheet.entries.length; ei++)
+      for (let ei = 0; ei < sheet.entries.length; ei++)
         $table.append(make_row(ei));
 
       return $table;
@@ -187,7 +178,7 @@ class Inventory extends Entries {
       $it.empty();
     }
 
-    var $it_ul = $("<ul></ul>");
+    const $it_ul = $("<ul></ul>");
 
     if (typeof $it.data("hide-cols") !== "undefined") {
       $it.data("hide-cols").split(/,\s*/).map(function (e) {
@@ -218,37 +209,43 @@ class Inventory extends Entries {
   }
 
   /**
-   * Update the inventory on WebDAV by reading an updated
+   * Update the inventory by reading an updated
    * version from CSV files on the web.  The inventory index is
    * read from a known URL, and then the URLs listed therein are
    * read to get the individual sheets.
    */
   update_from_web(sheets_url, report) {
 
-    var sheetp = new Entries({
+    const sheetp = new Entries();
+
+    return sheetp.init({
+      id: "inventory sub-sheet",
+      store: this.store,
       url: sheets_url,
       keys: {
         sheet: "string",
         url: "string"
       }
-    });
-
-    return sheetp.loadFromStore()
+    })
+    .then(s => s.loadFromStore())
     .then(() => {
       const promises = [];
 
       sheetp.each(mapping => {
         // Get the published CSV
-        var sheet = new Entries({
-          url: mapping.url,
-          asArrays: true,
-          keys: {
-            Count: "number"
-          }
-          // typeless, columns default to "string"
-        });
+        const sheet = new Entries();
         promises.push(
-          sheet.loadFromStore()
+          sheet.init({
+            id: "inventory mapping.url",
+            store: this.store,
+            url: mapping.url,
+            asArrays: true,
+            keys: {
+              Count: "number"
+            }
+            // other columns are typeless, columns default to "string"
+          })
+          .then(s => s.loadFromStore())
           .then(() => {
             report("info", "Read " + mapping.sheet +
                    " from the web");
