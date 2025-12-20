@@ -128,6 +128,14 @@ class App {
   }
 
   /**
+   * Invoked to reset the store being used
+   */
+  change_database() {
+    Cookies.remove("database_url");
+    location.reload();
+  }
+
+  /**
    * Update the local database from the remote read-only database.
    * @param {function} report progress reporting function(css_class, string)
    */
@@ -270,21 +278,13 @@ class App {
    */
   setup_database() {
     console.debug("setup_database:");
-    return this.config.load()
-    .catch(e => {
-      console.debug("setup_database: config load failed:", e.toString());
-      // Carry on with defaults
-    })
-    .always(() => 
-			// Reset all Entries
-			Promise.all(Object
-								  .values(this)
-								  .filter(f => f instanceof Entries)
-								  .map(f => {
-                    f.store = this.config.store;
-                    return f.reset();
-                  }))
-			.then(() => $(document).trigger("reload_ui")));
+    return Promise.all(Object
+								       .values(this)
+								       .filter(f => f instanceof Entries)
+								       .map(f => {
+                         f.store = this.config.store;
+                         return f.reset();
+                       }));
   }
 
   /**
@@ -297,33 +297,60 @@ class App {
    */
   database_reconnect(url, use_webdav) {
 		const app = this;
-    const server_url = String(window.location).replace(/\?.*/, "") + "data";
+    const sensor_server_url = String(window.location).replace(/\?.*/, "") + "data";
     return new Promise(resolve => {
       $.confirm({
         title: $("#connect_failed_dialog").prop("title"),
         content: $("#connect_failed_dialog").html(),
         onContentReady: function () {
           const $dlg_body = this.$content;
-          $dlg_body.find("[name=database_url]").text(url);
-          $dlg_body .find("[name=use_webdav]").prop("checked", use_webdav);
+          $dlg_body.find("[name=failed_url]").text(url);
+          $dlg_body.find("#server_url").text(url);
+          if (use_webdav) {
+            $dlg_body.find("#use_webdav").prop("checked", true);
+            $dlg_body.find("#server_url_required").show();
+          } else if (url === sensor_server_url) {
+            $dlg_body.find("#use_sensor_server").prop("checked", true);
+            $dlg_body.find("#server_url_required").hide();
+          } else if (url && url.length > 0) {
+            $dlg_body.find("#use_other").prop("checked", true);
+            $dlg_body.find("#server_url_required").show();          
+          } else {
+            $dlg_body.find("#use_browser").prop("checked", true);
+            $dlg_body.find("#server_url_required").hide();
+          }
+          $dlg_body.find('input[type=radio]')
+          .on('change', function () {
+            switch (this.id) {
+            case "use_webdav":
+            case "use_other":
+              $dlg_body.find("#server_url_required").show();
+              break;
+            case "use_sensor_server":
+            case "use_browser":
+              $dlg_body.find("#server_url_required").hide();
+              break;
+            };
+          });
         },
         buttons: {
-          use_sensor_server: {
-            text: "Use sensor server",
-            action: () => {
-              console.debug(`database_reconnect: using sensor server ${server_url}`);
-              resolve(app.database_connect(server_url, false));
+          "Continue": function () {
+            const $dlg_body = this.$content;
+            let nurl, ndav = false;
+            switch ($dlg_body.find('input[type=radio]:checked')[0].id) {
+            case "use_webdav":
+              ndav = true;
+            case "use_other":
+              nurl = $dlg_body.find("[name=server_url]").val();
+              break;
+            case "use_sensor_server":
+              nurl = sensor_server_url;
+              break;
+            case "use_browser":
+              nurl = "browser";
             }
-          },
-          use_provided_information: {
-            text: "Use provided information",
-            action: () => {
-              const $dlg_body = this.$content;
-              const nurl = $dlg_body.find("[name=database_url]").val();
-              const ndav = $dlg_body.find("[name=use_webdav]").is("checked");
-              console.debug(`database_reconnect: using ${ndav?"WebDAV":""} server ${nurl}`);
-              resolve(app.database_connect(nurl, ndav));
-            }
+            console.debug(`database_reconnect: using ${ndav?"WebDAV":""} server ${nurl}`);
+            resolve(app.database_connect(nurl, ndav));
           }
         }
       });
@@ -364,6 +391,30 @@ class App {
     });
   }
 
+  enable_tabs() {
+    const cfg = this.config;
+    const active = [];
+    $("#main_tabs a.main_tab").each(function(index) {
+      const name = this.href.replace(/^.*#/, "");
+      const enabled = cfg.get(`features:${name}`);
+      active[index] = enabled;
+      const li = $(`#main_tabs a[href='#${name}']`).closest("li");
+      if (enabled)
+        li.show();
+      else
+        li.hide();
+    });
+
+    const current = $("#main_tabs").tabs( "option", "active" );
+    if (!active[current]) {
+      for (let i = 0; i < active.length; i++)
+        if (active[i]) {
+          $("#main_tabs").tabs( "option", "active", i);
+          break;
+        }
+    }
+  }
+
   /**
    * Try a first time connection to the database.
    * @param {string} url the database URL
@@ -373,38 +424,50 @@ class App {
    */
   database_connect(url, use_webdav) {
     console.debug("database_connect: trying ", url);
-    const store_mod = use_webdav ? "WebDAVStore" : "GetPostStore";
+    const store_mod = url == "browser" ? "LocalStorageStore" :
+          (use_webdav ? "WebDAVStore" : "GetPostStore");
     return import(`./${store_mod}.js`)
     .then(mods => new mods[store_mod]())
     .then(store => store.connect(url))
     .then(store => {
       this.config.store = store;
-      console.debug(`database_connect: connected to ${url}, loading config.json`);
+
+      console.debug(`database_connect: connected to $store_mod} at ${url}, loading config.json`);
       return this.config.load()
       .then(() => {
-        Cookies.set("database_url", url, {
-          expires: 365
-        });
+        if (url !== "browser")
+          Cookies.set("database_url", url, {
+            expires: 365
+          });
+        this.enable_tabs();
 
 				return store;
       })
       .catch(e => {
         console.debug("database_connect: config.json load failed:", e);
+
+        if (url === "browser") {
+          // Loading config.json from localStorage will fail unless
+          // the configuration has been changed and saved. Accept it
+          // and use defaults.
+          return Promise.resolve(store);
+        }
+
         return new Promise(resolve => {
-          $.confirm({
-            title: "Failed to load config.json from database",
-            content: "You can retry with a different URL or continue with defaults",
-            buttons: {
-              retry: {
-                tect: "Retry",
-                action: () => this.database_reconnect(url, use_webdav)
-              },
-              defaults: {
-                text: "Use defaults",
-                action: () => resolve(store)
+            $.confirm({
+              title: "Failed to load config.json from database",
+              content: "You can retry with a different URL or continue with defaults",
+              buttons: {
+                retry: {
+                  tect: "Retry",
+                  action: () => this.database_reconnect(url, use_webdav)
+                },
+                defaults: {
+                  text: "Use defaults",
+                  action: () => resolve(store)
+                }
               }
-            }
-          });
+            });
         });
       });
     })
@@ -480,6 +543,7 @@ class App {
     .then(() => this.initialise_ui())
     .then(() => this.connect_to_database())
     .then(() => this.setup_database())
+		.then(() => $(document).trigger("reload_ui"))
     .catch(e => {
       console.error(`Failed to setup store`, e);
     });

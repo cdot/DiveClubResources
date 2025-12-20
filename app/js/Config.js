@@ -55,7 +55,7 @@ class Config {
   /**
    * Get a config key with given default.
    * @param {string} k key
-   * @param {(string|number)?} deflt default
+   * @param {(string|number|boolean)?} deflt default
    */
   get(k, deflt) {
     let data = this.store_data;
@@ -70,7 +70,7 @@ class Config {
   /**
    * Set a config key to the given value.
    * @param {string} k key
-   * @param {(string|number)?} v value
+   * @param {(string|number|boolean)?} v value
    */
   set(k, v) {
     const bits = k.split(":");
@@ -90,6 +90,7 @@ class Config {
    * @private
    */
   create(app) {
+    const config = this;
     this.$content = $("#settings_dialog");
     this.$content.show();
 
@@ -106,27 +107,30 @@ class Config {
         }
       }
       console.debug(`Set ${evt.target.name} = ${v}`);
-      this.set(evt.target.name, v);
-      this.save();
+      config.set(evt.target.name, v);
+      config.save();
     });
       
     $("input[type=text]", this.$content)
     .on("change", evt => 
-      this.set(evt.target.name, $(evt.target).val()));
+      config.set(evt.target.name, $(evt.target).val()));
       
-    $("input[type=checkbox]", this.$content)
+    $("input[type=checkbox]", config.$content)
     .on("change", evt => {
       const now = $(evt.target).is(":checked");
-      const v = this.get(evt.target.name);
+      const v = config.get(evt.target.name);
       const cur = /^\s*(true|1|on|yes)\s*/i.test(v);
       if ((cur && !now) || (!cur && now)) {
-        this.set(evt.target.name, now);
-        this.save();
+        config.set(evt.target.name, now);
+        config.save();
       }
     });
 
-    $("[data-with-info]", this.$content)
+    $("[data-with-info]", config.$content)
     .with_info();
+
+    $("button[name=change_database]")
+    .on("click", () => app.change_database());
 
     $("button[name=update_from_web]")
     .on("click", () => {
@@ -134,15 +138,24 @@ class Config {
         title: "Updating from the web",
         content: ""
       });
-      this.save()
+      config.save()
       .then(() => app.update_from_web((clss, m) => {
         $a.setContentAppend(`<div class="${clss}">${m}</div>`);
       }));
     });
 
-    $("button[name=close]", this.$content)
+    $(".tab_enabler").each(function() {
+      $(this)
+      .on("change", function() {
+        const enabled = $(this).is("checked");
+        config.set(`features:${this.name}`, enabled);
+        app.enable_tabs();
+      });
+    });
+
+    $("button[name=close]", config.$content)
     .on("click", () => {
-      this.$content.hide();
+      config.$content.hide();
       $("#loaded").show();
     });
   }

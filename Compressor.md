@@ -5,13 +5,15 @@ package.
 
 ## Sensors
 
-At HSAC the sensors are interfaced through a [Raspberry Pi](https://www.raspberrypi.org/) that reads [DS18B20](https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf) temperature, [DHT11](https://www.makerguides.com/wp-content/uploads/2019/02/DHT11-Datasheet.pdf) humidity and temperature, and [PC817](https://octopart.com/datasheet/pc817b-sharp-9239011) sensors. The Raspberry Pi runs a service that polls the sensors, and makes the results available via AJAX requests. The URL to make these requests is called the **Sensors root URL** and is specified in the configuration dialog of the main package. Sensors are
+At HSAC the sensors are interfaced through an ancient [Raspberry Pi](https://www.raspberrypi.org/) that reads [DS18B20](https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf) temperature, [DHT11](https://www.makerguides.com/wp-content/uploads/2019/02/DHT11-Datasheet.pdf) humidity and temperature, and power [PC817](https://octopart.com/datasheet/pc817b-sharp-9239011) sensors. The Raspberry Pi runs a service that polls the sensors, and makes the results available via AJAX requests. The URL to make these requests is called the **Sensors root URL** and is specified in the configuration dialog of the main package. Sensors are
 polled every few seconds. An audible alarm can be triggered if the internal
-temperature sensor exceeds a given limit.
+temperature sensor in the compressor exceeds a given limit.
 
 Note that we have found the DHT11 humidity sensor to be particularly
 unreliable, so we use manually entered values most of the time. Some
 day we should really replace it with something better (e.g. an AHT20).
+
+The Pi is also used as the database server.
 
 ## Filter Life Prediction
 

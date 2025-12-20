@@ -67,12 +67,11 @@
           <span id="open_console" class="fa fa-bug"></span>
         </div>
         <ul style="margin-right:1.2em">
-          <!-- add class="hidden" to tabs to disable them -->
-          <li><a href="#fixed" data-class="Compressor">Fixed Compressor</a></li>
-          <li><a href="#portable" data-class="Compressor">Portable Compressor</a></li>
-          <li><a href="#loans" data-class="Loans">Loans</a></li>
-          <li><a href="#inventory" data-class="Inventory">Inventory</a></li>
-          <li><a href="#nitrox" data-class="Nitrox">Nitrox</a></li>
+          <li><a class="main_tab" href="#fixed" data-class="Compressor">Fixed Compressor</a></li>
+          <li><a class="main_tab" href="#portable" data-class="Compressor">Portable Compressor</a></li>
+          <li><a class="main_tab" href="#loans" data-class="Loans">Loans</a></li>
+          <li><a class="main_tab" href="#inventory" data-class="Inventory">Inventory</a></li>
+          <li><a class="main_tab" href="#nitrox" data-class="Nitrox">Nitrox</a></li>
         </ul>
 	  </div>
 	</div>
@@ -85,7 +84,27 @@
 
     <div id="settings_dialog" class="fullscreen_dialog" data-title="<span class='fa fa-sliders-h'></span> Settings">
       <button name="update_from_web">Update from Remote DB</button>
+      <button name="change_database">Change database</button>
       <table class="form_table zebra">
+        <tr>
+          <td>
+            <span>
+              Enable tabs
+            </span>
+          </td>
+          <td class="widest">
+            <label>Fixed Compressor
+              <input type="checkbox" class="tab_enabler" name="features:fixed"></label>
+            <label>Portable Compressor
+              <input type="checkbox" class="tab_enabler" name="features:portable"></label>
+            <label>Loans
+              <input type="checkbox" class="tab_enabler" name="features:loans"></label>
+            <label>Inventory
+              <input type="checkbox" class="tab_enabler" name="features:inventory"></label>
+            <label>Nitrox
+              <input type="checkbox" class="tab_enabler" name="features:nitrox"></label>
+          </td>
+        </tr>
         <tr>
           <td>
             Loan return deadline
@@ -231,14 +250,30 @@
     </div>
 
     <div id="connect_failed_dialog" class="hidden" title="Connect failed">
-      Could not connect to the database at '<span class="url"></span>'
-      <br />
-      Provide the correct information, or click "Use sensor server".
-      <br />
-      <label for="database_url">URL</label>
-      <input type="text" id="database_url" name="database_url">
-      <label for="use_webdav">Using WebDAV</label>
-      <input type="checkbox" id="use_webdav" name="use_webdav">
+      Could not connect to the database at '<span class="url" name="failed_url"></span>'
+      <fieldset>
+        <legend>Select a database server</legend>
+        <div>
+          <input type="radio" id="use_browser" name="server_type">
+          <label for="use_browser">Browser local storage</label>
+        </div>
+        <div>
+          <input type="radio" id="use_sensor_server" name="server_type">
+          <label for="use_sensor_server">Sensor server</label>
+        </div>
+        <div>
+          <input type="radio" id="use_other" name="server_type">
+          <label for="use_other">Other GET/POST server</label>
+        </div>
+        <div>
+          <input type="radio" id="use_webdav" name="server_type">
+          <label for="use_webdav">WebDAV</label>
+        </div>
+        <div id="server_url_required">
+          <input type="text" id="server_url" name="server_url">
+          <label for="server_url">URL</label>
+        </div>
+      </fieldset>
     </div>
 
     <div id="alert_dialog" class="hidden" title="Alert">

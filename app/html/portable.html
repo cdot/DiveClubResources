@@ -23,9 +23,7 @@
           </span>
         </th>
         <td colspan="2" class="widest">
-          <select name="operator" class="operator" data-msg="Must be a trained operator" required>
-            <option></option>
-          </select>
+          <input name="operator" class="operator" data-msg="Must be a trained operator" required>
         </td>
       </tr>
       <tr>
@@ -62,9 +60,9 @@
           <button class="session_pause">
             <span class="fa fa-pause"></span>
           </button>
-          This session: <span class="session_time">00:00</span>,
+          This run: <span class="session_time">00:00</span>,
           <span data-with-info="#infoManualHours">Total</span>
-          <input type="number" name="runtime" data-msg="Must be greater than the last recorded runtime" min="0" required> hours
+          <input type="text" name="runtime" data-msg="Must be greater than the last recorded runtime"> hours
         </td>
       </tr>
     </table>

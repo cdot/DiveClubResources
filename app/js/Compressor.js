@@ -26,15 +26,22 @@ const HISTORY_TRS = 50;
 const SENSOR_URL = String(window.location).replace(/\?.*/, "");
 
 /**
+ * @param {number} a time delta in hours
+ * @return {string} a formatted string 12:34:56.78
+ */
+function hms(v) {
+  const hours = Math.floor(v);
+  v = (v - hours) * 60; // minutes
+  const mins = Math.floor(v);
+  const secs = ((v - mins) * 60).toFixed(2); // seconds, to 2 decimals
+  return `0${hours}`.slice(-2) + ":" + `0${mins}`.slice(-2)
+  + ":" + `0${secs}`.slice(-5);
+}
+
+/**
  * Compressor runtime events page.
  */
 class Compressor extends Entries {
-
-  /**
-   * Runtime in hours for the current compressor session only
-   * @member {}
-   */
-  session_time = 0;
 
   /**
    * Total runtime in hours for this compressor to date
@@ -85,11 +92,12 @@ class Compressor extends Entries {
 
   /**
    * Add a record from the values in the UI
+   * @return {Promise} promise that resolves when the record is added
    */
-  _addCompressorRecord() {
+  addCompressorRecord() {
 		if (typeof this.$form.valid === "function" && !this.$form.valid()) {
       console.debug("Form invalid");
-			return;
+			return Promise.reject();
     }
 		const $session_pause = this.$tab.find("button.session_pause");
 		const $session_time = this.$tab.find(".session_time");
@@ -105,9 +113,8 @@ class Compressor extends Entries {
       }
 		});
 		console.debug("Adding compressor record", record);
-		this._add(record).then(() => {
-			// Clear the timer
-			this.session_time = 0;
+		return this._add(record)
+    .then(() => {
 			$session_time.trigger("ticktock");
 			// Clear down the operator
 			this.$form.find("[name='operator']").val('');
@@ -121,19 +128,19 @@ class Compressor extends Entries {
 	//@override
   attachHandlers() {
 		this.$form = this.$tab.find(".validated_form");
-		this.$runtime = this.$tab.find("input[name='runtime']");
+		const $runtime = this.$runtime = this.$tab.find("input[name='runtime']");
 
 		// Controls for manual timer with portable compressor
 		const $session_play = this.$tab.find("button.session_play");
 		const $session_pause = this.$tab.find("button.session_pause");
 		const $session_time = this.$tab.find(".session_time");
 		let timer;
-		this.session_time = 0; // ms
+		let session_time = 0; // time run in this session, ms
 		let session_step_start;
 
 		// Handler for a clock tick event
 		$session_time.on("ticktock", () => {
-			let seconds = Math.round(this.session_time / 1000);
+			let seconds = Math.round(session_time / 1000);
 			let minutes = Math.floor(seconds / 60);
 			seconds -= minutes * 60;
 			const hours = Math.floor(minutes / 60);
@@ -148,14 +155,14 @@ class Compressor extends Entries {
 			if (this.length() > 0)
 				rta = this.get(this.length() - 1).runtime;
 			// Convert to hours
-			rta += this.session_time / 3600000;
+			rta += session_time / 3600000;
 			this._setRuntimeAndDigits(rta);
 			this._validateForm();
 		});
 
 		function tock() {
 			const now = Date.now();
-			this.session_time += now - session_step_start;
+			session_time += now - session_step_start;
 			session_step_start = now;
 			$session_time.trigger("ticktock");
 		}
@@ -166,22 +173,24 @@ class Compressor extends Entries {
 			timer = setTimeout(tick, when);
 		}
 
-		$session_play.on("click", () => {
+		$session_play
+    .on("click", () => {
 			session_step_start = Date.now();
 			tick();
-			$(this).button("disable");
+			$session_play.button("disable");
 			$session_pause.button("enable");
-			this.$runtime.prop("readonly", "readonly");
+			$runtime.prop("readonly", "readonly");
 		});
 
-		$session_pause.click(() => {
+		$session_pause
+    .on("click", () => {
 			if (timer)
 				clearTimeout(timer);
 			timer = null;
 			tock();
-			$(this).button("disable");
+			$session_pause.button("disable");
 			$session_play.button("enable");
-			this.$runtime.prop("readonly", null);
+			$runtime.prop("readonly", null);
 		});
 
 		// Digits runtime control changed?
@@ -234,7 +243,10 @@ class Compressor extends Entries {
 
     this.$tab.find("button[name='add_record']")
 		.off("click")
-		.on("click", () => this._addCompressorRecord());
+		.on("click", () => {
+      this.addCompressorRecord()
+      .then(() => session_time = 0);
+    });
 
 		const $change = this.$tab.find("button[name='filters_changed']");
 		this.$tab.find("select[name='operator']")
@@ -255,6 +267,7 @@ class Compressor extends Entries {
       record.filters_changed = true;
 			console.debug("Adding filter changed record", record);
 			this._add(record);
+      session_time = 0;
 		})
     .button(
       "option", "disabled", true);
@@ -284,22 +297,14 @@ class Compressor extends Entries {
    */
   _setRuntime(v) {
     this.runtime = v;
-
-    this.$runtime.val(v);
+    this.$runtime.val(hms(v));
 
     let delta = (this.length() > 0)
         ? v - this.get(this.length() - 1).runtime : 0;
 
     const $delta = this.$tab.find(".cr_delta");
     if (delta > 0) {
-      const hours = Math.floor(delta);
-      delta = (delta - hours) * 60; // minutes
-      const mins = Math.floor(delta);
-      const secs = ((delta - mins) * 60).toFixed(2); // seconds
-      $delta.show().text(
-        ("0" + hours).slice(-2)
-        + ":" + ("0" + mins).slice(-2)
-        + ":" + ("0" + secs).slice(-5));
+      $delta.show().text(hms(delta));
     } else
       $delta.hide();
   }
@@ -331,8 +336,8 @@ class Compressor extends Entries {
   }
 
   /**
-   * @private
    * Set the UI for the last run, and the rule for the minimum runtime
+   * @private
    */
   _setLastRuntime(record) {
 		this._setRuntimeAndDigits(record.runtime);
@@ -352,15 +357,6 @@ class Compressor extends Entries {
 
     if (this.$runtime.attr("type") === "hidden")
       return;
-
-    // Adjust validation rules, if validation is supported
-    if (typeof this.runtime.rules === "function") {
-      this.$runtime.rules("remove", "min");
-      /*this.$runtime.rules("add", {
-        min: r + 1 / (60 * 60) // 1 second 1
-      });*/
-      throw new Error("r not defined");
-    }
   }
 
   /**
@@ -384,8 +380,11 @@ class Compressor extends Entries {
       if (cur)
         this._setLastRuntime(cur);
 
-      // Restart the sensor loop
-      this._readSensors();
+      // Restart the sensor loop on the fixed compressor
+      if (this.id === "fixed")
+        this._readSensors();
+      else
+        this._setRuntimeAndDigits(0);
 
       // Validate the form
       this._validateForm();
@@ -472,11 +471,13 @@ class Compressor extends Entries {
       // Promise to update runtime, This is always sampled.
       this._getSample("power")
       .then(sample => {
-        this._setRuntimeAndDigits(
-          this.runtime + sample.sample / (60 * 60 * 1000));
+        const rta = this.runtime + sample.sample / (60 * 60 * 1000);
+        this._setRuntimeAndDigits(rta);
         this._validateForm();
       })
-      .catch(() => this._setRuntimeAndDigits(this.runtime, true))
+      .catch(() => {
+        this._setRuntimeAndDigits(this.runtime, true);
+      })
     ];
       
     // Promise to update sampled fields. These can be disabled in the
@@ -604,7 +605,6 @@ class Compressor extends Entries {
       r.runtime = 0;
     if (typeof r.filters_changed === "undefined")
       r.filters_changed = false;
-    this.session_time = 0;
 
     // Reload entries in case they were asynchronously changed
     return this.loadFromStore()
