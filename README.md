@@ -12,6 +12,7 @@ The application comprises two parts:
 HSAC members can get [information on our specific configuration](https://docs.google.com/document/d/13a0xBhF8_AJsvffOMFLHleUT0XIu8TSBcTyFuffQ9EQ)
 
 ## Browser Application
+![Compressor page](images/Compressor.png)
 
 The app supports a number of services:
 
