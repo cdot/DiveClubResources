@@ -32,3 +32,7 @@ $ npm run test # use mocha to run all unit tests
 ```
 To simplify app development, the [server](SERVER.md) can be run
 even when no hardware sensors are available.
+
+Because web browsers on mobile devices don't generally support the developer console, there is
+a debug mode that can be enabled by adding `?debug` to the URL. This enables a developer console that can be opened
+using the bug button that appears in the upper right and captures `console.debug`.
