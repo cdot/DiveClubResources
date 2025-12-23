@@ -1,5 +1,6 @@
 # Compressor
 ![Compressor page](images/Compressor.png)
+
 Compressor support includes a logging application and an optional sensor
 package.
 
