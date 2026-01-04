@@ -65,6 +65,7 @@ if (!options.debug)
   console.debug = () => {};
 
 function start_sensor(cfg) {
+  console.debug("WTF", cfg.sensor);
 	cfg.sensor.connect()
 	.then(() => console.debug(`start_sensor: ${cfg.name} connected`))
 	.catch(error => {
@@ -111,7 +112,8 @@ Fs.readFile(options.serverConfigFile)
   if (config.data_dir) {
     server.use(bodyParser.text({ type: '*/*' }));
     server.post("/data/*path", (req, res) => {
-      const path = Path.join(config.data_dir, req.params.path[0]);
+      const path = Path.normalize(
+        Path.join(config.data_dir, req.params.path[0]));
       console.debug("POST to", path);
       return Fs.writeFile(path, req.body)
       .then(() => res.status(200).send(`${path} saved`))
@@ -150,12 +152,14 @@ Fs.readFile(options.serverConfigFile)
         server.get(`/${sensor_cfg.sensor.name}`, (req, res) => {
           if (typeof req.query.t !== "undefined")
             Time.sync(req.query.t);
-					console.debug(`Got sensor ${sensor_cfg.name} request`);
           sensor_cfg.sensor.sample()
           .then(sample => {
+					  console.debug(`${sensor_cfg.name} => ${sample.sample}`);
+            res.set('Content-Type', 'application/json');
             res.send(sample);
           })
 					.catch(e => {
+            console.debug(`${sensor_cfg.sensor.name} sampling error`, e);
 					});
         });
         return `Registered sensor /${sensor_cfg.sensor.name}`;

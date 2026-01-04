@@ -1,26 +1,26 @@
 {
-    "name": "hsac",
-    "version": "1.0.0",
+    "name": "Dive Club Resources",
+    "version": "2.0.0",
     "license": "MIT",
-    "description": "HSAC Shed Sensors",
+    "description": "Server",
     "type": "module",
     "scripts": {
         "lint": "eslint js",
-        "update": "ncu -u ",
-        "simulation": "node js/sensors.js -p 8000 -c example.cfg --simulate"
+        "simulation": "node src/server.js -p 8000 -c example.cfg -d -s"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/cdot/HSAC.git"
+        "url": "git+https://github.com/cdot/Dive Club Resources.git"
     },
     "engines": {
-        "node": ">=12.0.0"
+        "node": "18.19.0",
+        "npm": "10.2.3"
     },
     "author": "Crawford Currie",
     "bugs": {
-        "url": "https://github.com/cdot/HSAC/issues"
+        "url": "https://github.com/cdot/Dive Club Resources/issues"
     },
-    "homepage": "https://github.com/cdot/HSAC",
+    "homepage": "https://github.com/cdot/Dive Club Resources",
     "devDependencies": {
         "eslint": ">=9.39.1"
     },
@@ -31,10 +31,7 @@
         "express": "^5.2.1",
         "fs-extra": "^11.3.2",
         "node-dht-sensor": "^0.4.5",
-        "node-getopt": "^0.3.2",
-        "posix-getopt": "^1.2.1",
-        "request": "^2.88.2",
-        "requirejs": "^2.3.8"
+        "posix-getopt": "^1.2.1"
     },
     "eslintConfig": {
         "extends": "eslint:recommended",
