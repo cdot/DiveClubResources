@@ -1,12 +1,12 @@
 {
-  "name": "@cdot/HSAC",
+  "name": "@cdot/DiveClubResources",
   "version": "2.0.0",
   "license": "MIT",
-  "description": "HSAC Sheds",
+  "description": "Browser Application",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cdot/HSAC.git"
+    "url": "git+https://github.com/cdot/DiveClubResources.git"
   },
   "scripts": {
     "lint": "eslint js -f unix",
@@ -14,30 +14,20 @@
   },
   "author": "Crawford Currie",
   "bugs": {
-    "url": "https://github.com/cdot/HSAC/issues"
+    "url": "https://github.com/cdot/DiveClubResources/issues"
   },
   "engines": {
     "node": ">=12.4.0"
   },
-  "homepage": "https://github.com/cdot/HSAC",
+  "homepage": "https://github.com/cdot/DiveClubResources",
   "devDependencies": {
-    "axios": "^1.8.2",
     "chai": "^5.1.2",
-    "clean-css": "^5.3.3",
     "eslint": ">=9.15.0",
     "eslint-formatter-unix": "^8.40.0",
-    "express": "^4.21.1",
-    "html-minifier": "^4.0.0",
-    "jquery-ui-touch-punch": "^0.2.3",
-    "markdown-it": "^14.1.0",
-    "mocha": "^10.8.2",
-    "posix-getopt": "^1.2.1",
-    "webdav-server": "^2.6.2"
+    "mocha": "^10.8.2"
   },
   "dependencies": {
-    "@rwap/jquery-ui-touch-punch": "^1.1.5",
     "font-awesome": "^4.7.0",
-    "fs-extra": "^11.2.0",
     "icon-font": "^0.0.4",
     "jquery": "^3.7.1",
     "jquery-confirm": "^3.3.4",
@@ -46,11 +36,8 @@
     "jquery-ui": "^1.14.1",
     "jquery-ui-iconfont": "^2.3.2",
     "jquery-validation": "^1.21.0",
-    "jquery.toc": "^0.4.0",
     "js-cookie": "^3.0.5",
     "jsdom": "^25.0.1",
-    "markdown-it": "^14.1.0",
-    "requirejs-text": "^2.0.16",
-    "tablesorter": "^2.32.0"
+    "markdown-it": "^14.1.0"
   }
 }

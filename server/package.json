@@ -1,16 +1,16 @@
 {
-    "name": "Dive Club Resources",
+    "name": "DiveClubResources",
     "version": "2.0.0",
     "license": "MIT",
     "description": "Server",
     "type": "module",
     "scripts": {
         "lint": "eslint js",
-        "simulation": "node src/server.js -p 8000 -c example.cfg -d -s"
+        "simulation": "node server/src/server.js -p 8000 -c example.cfg -d -s"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/cdot/Dive Club Resources.git"
+        "url": "git+https://github.com/cdot/DiveClubResources.git"
     },
     "engines": {
         "node": "18.19.0",
@@ -18,9 +18,9 @@
     },
     "author": "Crawford Currie",
     "bugs": {
-        "url": "https://github.com/cdot/Dive Club Resources/issues"
+        "url": "https://github.com/cdot/DiveClubResources/issues"
     },
-    "homepage": "https://github.com/cdot/Dive Club Resources",
+    "homepage": "https://github.com/cdot/DiveClubResources",
     "devDependencies": {
         "eslint": ">=9.39.1"
     },

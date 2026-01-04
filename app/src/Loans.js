@@ -1,7 +1,10 @@
-/*@preserve Copyright (C) 2018-2924 Crawford Currie http://c-dot.co.uk license MIT*/
+/*@preserve Copyright (C) 2018-2026 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env browser,jquery */
 
+// See comment in index.html import "jquery-tablesorter";
+
 import { Entries } from "./Entries.js";
+
 import "./jq/edit-in-place.js";
 import "./jq/select-in-place.js";
 
@@ -440,12 +443,13 @@ class Loans extends Entries {
       this.capture = $.extend({}, DEFAULTS);
       this.load_tfoot();
       this.$loan_table.trigger("updateAll");
-      /*this.$loan_table.tablesorter({
+      /*See comment in index.html
+        this.$loan_table.tablesorter({
         cancelSelection: true,
-        selectorHeaders: "> thead th",
-        selectorSort: "th",
+        selectorHeaders: "> div.table-head-group div.table-head-cell",
+        selectorSort: "div.table-head-cell",
         headerTemplate: '{content}<a href="#">{icon}</a>',
-        widgets: ['zebra', 'columns', 'uitheme'],
+        widgets: ['columns', 'uitheme'],
         theme: 'jui',
         delayInit: true,
         dateFormat: "ddmmyyyy"
