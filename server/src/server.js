@@ -65,7 +65,6 @@ if (!options.debug)
   console.debug = () => {};
 
 function start_sensor(cfg) {
-  console.debug("WTF", cfg.sensor);
 	cfg.sensor.connect()
 	.then(() => console.debug(`start_sensor: ${cfg.name} connected`))
 	.catch(error => {

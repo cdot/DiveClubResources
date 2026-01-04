@@ -1,4 +1,4 @@
-/*@preserve Copyright (C) 2019 Crawford Currie http://c-dot.co.uk license MIT*/
+/*@preserve Copyright (C) 2019-2025 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env node.js */
 
 import DHT from 'node-dht-sensor';
@@ -16,12 +16,14 @@ const BACK_OFF = 5000; // 5s in ms
 class DHTPin {
 
   constructor(type, gpio) {
+    // 11 or 22
     this.mType = type;
     this.gpio = gpio;
     this.mLastSample = { temperature: 0, humidity: 0,
                          time: 0, dubious: "Uninitialised" };
+    // Current sampling promise, don't replace
     this.mSamplingPromise = null;
-    this.mUnusable = false;
+    // Reference to simulator, if required
     this.simulate = undefined;
   }
 
@@ -31,9 +33,6 @@ class DHTPin {
    * read to return, then the last sample is returned.
    */
   sample() {
-    if (this.mUnusable)
-      return Promise.reject("Unusable");
-
     if (this.mSamplingPromise)
       return this.mSamplingPromise;
 
@@ -53,7 +52,6 @@ class DHTPin {
         clearTimeout(self.mTimeout); // clear it ASAP
         self.mTimeout = null;
         if (e) {
-          this.mUnusable = true;
           console.error("DHT error", e);
           reject("DHT error " + e);
           return;
