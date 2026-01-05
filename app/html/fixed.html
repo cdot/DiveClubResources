@@ -70,7 +70,7 @@
           <input name="humidity" type="number" class="integer2" value="50" id="fixed_hum" data-compressor="fixed" data-sensor-config='{"name":"intake_humidity","max_age":300000,"sampled":".fixed_hum_sensed","unsampled":".fixed_hum_manual","dubious":".fixed_hum_dubious","enable":"#fixed_hum_enable"}'>%
           <span class="hidden fixed_hum_sensed detected">(detected)</span>
           <span class="hidden fixed_hum_manual warning">(Cannot read sensor - please enter value manually)</span>
-          <span class="hidden fixed_hum_dubious rainbow">(sensed value out of valid range)</span>
+          <span class="hidden fixed_hum_dubious warning">(sensed value out of valid range)</span>
           <div class="hidden humidity slider fixed_hum_manual" data-slider='{"min":0,"max":80,"friend":"#fixed_hum"}'>
 		    <div class="min">0%</div><div class="max">80%</div>
           </div>

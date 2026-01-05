@@ -9,6 +9,12 @@ import { RangeSimulator } from "./RangeSimulator.js";
 
 const BACK_OFF = 5000; // 5s in ms
 
+// Humidity range supported by different DHT types
+const RANGE = {
+  11: { rhmin: 20, rhmax: 90, tmin: 0, tmax: 50 },
+  22: { rhmin: 0, rmmax: 100, tmin: -40, tmax: 80 }
+};
+
 /**
  * Interface to a DHTxx sensor
  * @private
@@ -16,13 +22,16 @@ const BACK_OFF = 5000; // 5s in ms
 class DHTPin {
 
   constructor(type, gpio) {
-    // 11 or 22
-    this.mType = type;
+    this.type = type; // 11 or 22
     this.gpio = gpio;
-    this.mLastSample = { temperature: 0, humidity: 0,
-                         time: 0, dubious: "Uninitialised" };
+    this.lastSample = {
+      temperature: 0,
+      humidity: 0,
+      time: 0,
+      dubious: "Uninitialised"
+    };
     // Current sampling promise, don't replace
-    this.mSamplingPromise = null;
+    this.samplingPromise = null;
     // Reference to simulator, if required
     this.simulate = undefined;
   }
@@ -33,16 +42,16 @@ class DHTPin {
    * read to return, then the last sample is returned.
    */
   sample() {
-    if (this.mSamplingPromise)
-      return this.mSamplingPromise;
+    if (this.samplingPromise)
+      return this.samplingPromise;
 
-    if (typeof this.mLastSample.error === "undefined" // Force resampling if there was an error
-        && Time.now() - this.mLastSample.time < BACK_OFF) {
-      return Promise.resolve(this.mLastSample);
+    if (typeof this.lastSample.error === "undefined" // Force resampling if there was an error
+        && Time.now() - this.lastSample.time < BACK_OFF) {
+      return Promise.resolve(this.lastSample);
     }
 
     const self = this;
-    this.mSamplingPromise = new Promise((resolve, reject) => {
+    this.samplingPromise = new Promise((resolve, reject) => {
       self.mTimeout = setTimeout(() => {
         self.mIsSampling = false;
         self.mTimeout = null;
@@ -59,30 +68,30 @@ class DHTPin {
 
         // Check sample range
         const sample = { time: Time.now(), temperature: t, humidity: h };
-        if (h < 20 || h > 90)
-          sample.humidity_dubious = "sensor may require recalibration";
-        if (t < 0 || t > 50)
-          sample.temperature_dubious = `${t}C out of range 0C..50C`;
-        self.mLastSample = sample;
+        if (h < RANGE[this.type].rhmin || h > RANGE[this.type].rhmax)
+          sample.humidity_dubious = `${h}% out of range ${RANGE[this.type].rhmin}%..${RANGE[this.type].rhmax}%`;
+        if (t < RANGE[this.type].tmin || t > RANGE[this.type].tmax)
+          sample.temperature_dubious = `${t}C out of range ${RANGE[this.type].tmin}C..${RANGE[this.type].tmax}C`;
+        self.lastSample = sample;
         resolve(sample);
       };
       if (this.simulate)
         handler(null, this.simulate.temp.sample(),
                 this.simulate.hum.sample());
       else
-        DHT.read(this.mType, this.gpio, handler);
+        DHT.read(this.type, this.gpio, handler);
     })
     .catch(e => {
-      this.mLastSample.error = e;
-      return Promise.resolve(this.mLastSample);
+      this.lastSample.error = e;
+      return Promise.resolve(this.lastSample);
     })
     .finally(f => {
       if (this.mTimeout)
         clearTimeout(this.mTimeout);
       this.mTimeout = null;
-      this.mSamplingPromise = null;
+      this.samplingPromise = null;
     });
-    return this.mSamplingPromise;
+    return this.samplingPromise;
   }
 }
 
