@@ -1,9 +1,10 @@
 # Dive Club Resources
-
+![Logo](images/logo.png)
 Custom server and browser application for managing a dive club's resources.
-This was created for [Hartford Sub-Aqua Club (HSAC)](http://hartfordscuba.co.uk), and reflects
-the way the club organises and manages its resources - training kit, compressor, and oxygen bank. It has
-been used successfully by the club since 2018.
+This was created for [Hartford Sub-Aqua Club (HSAC)](http://hartfordscuba.co.uk),
+and reflects the way the club organises and manages its resources - training
+kit, compressor, and oxygen bank. It has been used successfully by the club
+since 2018.
 
 The application comprises two parts:
 1. A [browser application](APP.md)
@@ -16,7 +17,7 @@ HSAC members can get [information on our specific configuration](https://docs.go
 
 The app supports a number of services:
 
-1. Fixed compressor - recording compressor usage with tracking of filter lifetime and sensor integration
+1. Fixed compressor - recording compressor usage with sensor integration and automatic tracking of filter lifetime
 2. Nitrox - nitrox blending calculations
 3. Portable compressor - like fixed compressor but tuned for a portable
 4. Inventory - equipment records
