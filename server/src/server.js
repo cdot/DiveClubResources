@@ -69,15 +69,15 @@ function start_sensor(cfg) {
 	cfg.sensor.connect()
 	.then(() => console.debug(`start_sensor: ${cfg.name} connected`))
 	.catch(error => {
-		console.error(`start_sensor: ${cfg.name} error: ${error}`);
+		console.debug(`start_sensor: ${cfg.name} error: ${error}`);
 		// If simulation is requested, make a simulated sensor if the
 		// connect failed
 		if (options.simulate) {
-			console.error(`start_sensor: Using simulation for '${cfg.name}'`);
+			console.debug(`start_sensor: Using simulation for '${cfg.name}'`);
 			cfg.sensor.simulate();
 		} else {
 			// Back off and re-try
-			console.error(`start_sensor: Backing off '${cfg.name}', will retry in 5s`);
+			console.debug(`start_sensor: Backing off '${cfg.name}', will retry in 5s`);
 			setTimeout(() => start_sensor(cfg), 5000);
 		}
 	});
@@ -86,8 +86,8 @@ function start_sensor(cfg) {
 Fs.readFile(options.serverConfigFile)
 .then(config => JSON.parse(config))
 .catch(e => {
-  console.error(`Cannot read server configuration from ${options.serverConfigFile}`);
-  console.error(e);
+  console.debug(`Cannot read server configuration from ${options.serverConfigFile}`);
+  console.debug(e);
   console.log(DESCRIPTION);
   return Promise.reject(e.message);
 })
@@ -222,5 +222,5 @@ Fs.readFile(options.serverConfigFile)
   });
 })
 .catch(e => {
-  console.error("Error", e);
+  console.debug("Server did not start:", e);
 });

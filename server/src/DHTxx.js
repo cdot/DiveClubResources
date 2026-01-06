@@ -61,7 +61,7 @@ class DHTPin {
         clearTimeout(self.mTimeout); // clear it ASAP
         self.mTimeout = null;
         if (e) {
-          console.error("DHT error", e);
+          console.debug("DHT error", e);
           reject("DHT error " + e);
           return;
         }
@@ -134,14 +134,14 @@ class DHTxx extends Sensor {
     // Make sure we have GPIO available, and we can read a sample
     return Fs.stat("/dev/gpiomem")
     .catch(e => {
-      console.error(this.field, "DHT connect failed: ", e.message);
+      console.debug(this.field, "DHT connect failed: ", e.message);
       return Promise.reject(e.message);
     })
     .then(s => {
       return DHTPins[this.gpio].sample()
       .then(s => {
         if (s.error) {
-          console.error(this.field, "DHT connect sample failed: ", s.error);
+          console.debug(this.field, "DHT connect sample failed: ", s.error);
           return Promise.reject("sample failed: " + s.error);
         }
         console.debug(this.name, "connected to GPIO", this.gpio);

@@ -63,7 +63,7 @@ class Timer extends Sensor {
     // Force-unexport first, in case it was previously left locked after a crash
     return Fs.writeFile(`${GPIOPATH}unexport`, `${this.gpio}`)
     .catch(e => {
-      console.error(`Timer: unexport GPIO ${this.gpio} failed`, e);
+      console.debug(`Timer: unexport GPIO ${this.gpio} failed`, e);
       return Promise.resolve();
     })
     .then(() => {
