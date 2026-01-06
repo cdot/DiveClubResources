@@ -32,7 +32,6 @@ on most modern browsers.
 `npm` is used to run development tasks. Available targets are:
 ```
 $ npm run lint # run eslint on source code
-$ npm run update # run ncu-u to update npm dependencies
 $ npm run test # use mocha to run all unit tests
 ```
 To simplify app development, the [server](SERVER.md) can be run
