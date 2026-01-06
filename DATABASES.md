@@ -28,12 +28,13 @@ for an alternative server.
 
 ### Using the sensor server for the application database
 
-When you start the included sensor server, it automatically starts a web
-server that supports unauthenticated GET and POST requests to a file store.
-This can be used as the file database for the app. Or you can use any other
-server that supports unauthenticated GET and POST requests to files in a
-directory.
+When you start the included sensor server, by default it automatically
+starts a web server that supports unauthenticated GET and POST
+requests to a file store. This can be used as the file database for
+the app. Or you can use any other server that supports unauthenticated
+GET and POST requests to files in a directory, or a [WebDAV](#webdav) server.
 
+<a id="webdav"></a>
 ### Using a WebDAV server as the application database
 
 It's easy to set up a WebDAV server, even on a mobile device. Most

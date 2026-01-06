@@ -422,6 +422,10 @@ class App {
     });
   }
 
+  /**
+   * Enable main tabs
+   * @private
+   */
   enable_tabs() {
     const cfg = this.config;
     const active = [];
@@ -447,7 +451,7 @@ class App {
   }
 
   /**
-   * Construct a store apprpriate for the url
+   * Construct a store appropriate for the url
    * @param {URL} url the URL where the store is
    * @param {boolean} use_webdav true to use webdav
    * @return {Promise} promise that resolves to an AbstractStore

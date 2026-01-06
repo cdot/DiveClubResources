@@ -1,7 +1,7 @@
 # Browser Application
 This is the browser app for the Dive Club Resources framework.
 
-The application is written to run in a standard web
+The application runs in a standard web
 browser, which provides a high degree of portability and openness.
 It presents a tab interface, where each tab offers a particular service:
 
@@ -12,6 +12,11 @@ It presents a tab interface, where each tab offers a particular service:
 5. [Loans](Loans.md) - recording of equipment loans with complete editable history and cross-links to inventory. Outgoing loans are recorded by selection from the inventory. Loan returns are recorded aginst the name of the person receiving back the kit. The `Inventory` tab is automatically updated to reflect kit that is out on loan.
 
 You can disable tabs you aren't using by editing index.html.
+
+# Installation
+The app requires a web server to serve it. This can be a pre-packaged web server such as `Apache` or `lightppd`, or you can use the built-in web server included in the package.
+
+The easiest way to install is to `git clone` the package from GitHub. The built-in web server can then be run as described [here](SERVER.md). Opening the application in a browser is a simple matter of visiting the web server.
 
 ## Databases
 
@@ -27,7 +32,6 @@ on most modern browsers.
 `npm` is used to run development tasks. Available targets are:
 ```
 $ npm run lint # run eslint on source code
-$ npm run update # run ncu-u to update npm dependencies
 $ npm run test # use mocha to run all unit tests
 ```
 To simplify app development, the [server](SERVER.md) can be run

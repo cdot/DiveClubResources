@@ -1,21 +1,35 @@
 # Server
 
-This is an ultra-light web server using [Express](https://expressjs.com),
+This is an ultra-light web server written in Javascript and using
+[Express](https://expressjs.com),
 designed to be run on a Raspberry Pi (RPi). It was developed using `node.js 18.19.0` running `dietpi 4.19.66`. It should work with Raspberry Pi OS (Raspbian)
 and on other RPi architectures as well, though it is untested.
 
-The server supports file access for serving HTML and other resources, and
-AJAX requests for access to DHT11, DS18B20, and PC817 sensors, all attached
-to GPIO. It also optionally supports unautheticated POST requests for saving
-CSV data files to a directory.
+The server supports GET requests for access to DHT11, DS18B20,
+and PC817 sensors, all attached to GPIO.
 
-The pinout for the sensors is shown in [RPi pinout.svg](RPi pinout.svg)
+The server is primarily intended for providing access to the sensors.
+It can also also optionally support GET and POST requests
+for serving the browser application and reading/saving data files in a
+directory. If your sensor server will be accessible through the internet,
+you are recommended disable the data file access and use a standard web server
+(such as Apache or nginx) and [WebDAV](DATABASES.md#webdav) instead.
+
+# Installation
+
+The easiest way to install is to `git clone` the package from GitHub. The built-in web server can then be run as described under [Starting the Server](#start_server), below.
 
 # Configuration
-The server is configured from a file specified using the -c option on the
+The server is configured from a file specified using the `--config` option on the
 command-line. An example is given [here](server/example.cfg). The configuration
-file is in JSON format and supports the following:
-* `data_dir` server path to a directory that CSV files can be POSTed to. Set undefined if you don't want this enabled.
+file is in JSON format and supports the following keys:
+* `app_dir` server path to the directory where the files for the browser application can be found. If this is not defined, then the application will not be served.
+* `data_dir` server path to a directory that CSV files can be POSTed to. The user running the server must be able to write to this directory. If this is undefined the sensor server won't be able to provide a database service.
+* `https` optional https configuration; if not provided, http will be used
+  * Ensure certificate and key files can't be accessed from the browser.
+  * `cert` : certificate file e.g. `https.cert`
+  * `key` : key file e.g. `https.key`
+* `auth` an optional username:password that can be used to enable basic auth for all requests e.g. `{ "me": "pass" }`. If you are using auth you probably want to use `https` as well, as otherwise passwords are sent as plain text.
 * `port` the port to listen on
 * `sensors` an array of sensor configurations. Each configuration specifies:
   * `name` the name of the sensor
@@ -24,12 +38,14 @@ file is in JSON format and supports the following:
 
 # Sensor Configuration
 
+An example pinout for the sensors is shown in [RPi pinout.svg](RPi pinout.svg)
+
 ## DHT11
 
 This sensor is used to measure the temperature and humidity of the
-intake air drawn into the compressor. It can be powered from the RPi and uses a single GPIO pin, plus power. Accessing this sensor is handled by the `node-dht-sensor` npm package.
+intake air drawn into the compressor. Accessing this sensor is handled by the `node-dht-sensor` npm package.
 
-The sensor has a humidity range between 20% and 90%. If the reading is outside that range, the reading is marked as "dubious" as the sensor requires recalibration. Note that the DHT family humidity sensor is notoriously inaccurate, and the recalibration process is tedious, so it can easily be disabled when it falls out of calibration.
+The sensor has a humidity range between 20% and 90%. If the reading is outside that range, the reading is marked as "dubious" as the sensor requires recalibration. Note that the DHT11 is notoriously inaccurate and unreliable, and the recalibration process is tedious, so it can easily be ignored when it fails and the humidity entered manually.
 
 ### Configuration
 The supporting class is `DHTxx`. The fields required for configuration are:
@@ -65,6 +81,7 @@ The supporting class is `Timer`. The fields required for configuration are:
 * `gpio` the GPIO pin the sensor signal wire connected to
 * `poll` the polling frequency in ms
 
+<a id="start_server"></a>
 # Starting the Server
 You will need to install node.js and npm.
 
