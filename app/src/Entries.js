@@ -125,7 +125,7 @@ class Entries {
 	 */
 	loadUI() {
     console.debug(`Loading html/${this.id}.html`);
-		return $.get(`app/html/${this.id}.html?nocache=${Date.now()}`)
+		return $.get(`html/${this.id}.html?nocache=${Date.now()}`)
 		.then(html => {
 			const $tab = $(`<div id="${this.id}"></div>`);
 			$tab.html(html);
@@ -489,7 +489,7 @@ class Entries {
       // Sounds are numbered 0..130
       const pick = Math.floor(Math.random() * 131);
       try {
-        const snd = new Audio(`app/sounds/${pick}.mp3`);
+        const snd = new Audio(`sounds/${pick}.mp3`);
         snd.play();
       } catch (e) {
         console.debug("Cannot play", e);

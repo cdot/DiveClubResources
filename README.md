@@ -34,8 +34,7 @@ See the [APP.md](APP.md) for more information.
 
 ## Web Server
 
-The web server is designed to run on a Raspberry Pi that interfaces to a number
-of electronic sensors on the compressor. The server also provides data storage.
+The built-in web server is designed to be run on a Raspberry Pi and is intended primarily for giving access to the various sensors used for monitoring the compressor. It can also be used for serving the browser application. Optionally, it can also act as a data store.
 
 See [SERVER.md](SERVER.md) for more information. The server
 can be run without any connected sensors for debugging the web application.

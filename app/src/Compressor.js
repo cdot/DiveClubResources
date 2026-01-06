@@ -519,7 +519,7 @@ class Compressor extends Entries {
               $report.addClass("error");
               $el.show();
               if (typeof Audio !== "undefined") {
-                const snd = new Audio("app/sounds/siren.mp3");
+                const snd = new Audio("sounds/siren.mp3");
                 snd.play();
               }
             } else {

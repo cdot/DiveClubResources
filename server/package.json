@@ -29,6 +29,7 @@
         "cors": "^2.8.5",
         "ds18b20-raspi": "^0.3.6",
         "express": "^5.2.1",
+        "express-basic-auth": "^1.2.1",
         "fs-extra": "^11.3.2",
         "node-dht-sensor": "^0.4.5",
         "posix-getopt": "^1.2.1"

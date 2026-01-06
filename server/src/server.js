@@ -18,11 +18,12 @@ import Getopt from "posix-getopt";
 
 import Cors from "cors";
 import Express from "express";
+import BasicAuth from "express-basic-auth";
 import bodyParser from "body-parser";
 import HTTP from "http";
+import HTTPS from "https";
 import { Time } from "./Time.js";
 
-// This module is at server/js below the distribution
 const DISTRIBUTION = Path.normalize(Path.join(__dirname, "..", ".."));
 
 const options = {
@@ -95,88 +96,129 @@ Fs.readFile(options.serverConfigFile)
   if (typeof config.port === "undefined")
     config.port = 8000;
 
-  const server = new Express();
-
-  server.use(Cors());
-  
-  if (options.debug)
-    server.use((req, res, next) => {
-      console.debug(`${req.method} ${req.url}`);
-      next();
-    });
-
-  // Add routes
-
-  // get/post database files, if data_dir is defined.
-  if (config.data_dir) {
-    server.use(bodyParser.text({ type: '*/*' }));
-    server.post("/data/*path", (req, res) => {
-      const path = Path.normalize(
-        Path.join(config.data_dir, req.params.path[0]));
-      console.debug("POST to", path);
-      return Fs.writeFile(path, req.body)
-      .then(() => res.status(200).send(`${path} saved`))
-      .catch(e => {
-        console.debug("Save failed", e);
-        res.status(400).send(`${path} save failed`);
-      });
-    });
-  }
-
-  // Serve distribution files
-  server.use(Express.static(DISTRIBUTION));
-
-  // Make sensors
   const promises = [];
-  for (const sensor_cfg of config.sensors) {
-    const clss = sensor_cfg.class;
-
+  if (config.https) {
     promises.push(
-      import(`./${clss}.js`)
-      .then(mods => {
-        const SensorClass = mods[clss];
-        sensor_cfg.sensor = new SensorClass(sensor_cfg);
-      })
-      .catch(e => {
-        console.debug(clss, `import(${clss}) : ${e}`);
-        sensor_cfg.error = `Could not import ${clss}: ${e}`;
- 			})
-      .then(() => {
-			  // Start trying to connect
-			  console.debug(`Connect sensor ${sensor_cfg.name}`);
-			  start_sensor(sensor_cfg);
-		  })
-      // Add routes
-      .then(() => {
-        server.get(`/${sensor_cfg.sensor.name}`, (req, res) => {
-          if (typeof req.query.t !== "undefined")
-            Time.sync(req.query.t);
-          sensor_cfg.sensor.sample()
-          .then(sample => {
-					  console.debug(`${sensor_cfg.name} => ${sample.sample}`);
-            res.set('Content-Type', 'application/json');
-            res.send(sample);
-          })
-					.catch(e => {
-            console.debug(`${sensor_cfg.sensor.name} sampling error`, e);
-					});
-        });
-        return `Registered sensor /${sensor_cfg.sensor.name}`;
-      })
-      .catch(sensor_cfg => {
-        console.debug(sensor_cfg.name, " sensor could not be registered", sensor_cfg);
-        server.get(`/${sensor_cfg.name}`, (req, res, next) => {
-          next();
-        });
-        return Promise.resolve(`failed /${sensor_cfg.name}`);
-      }));
+      Fs.readFile(config.https.key)
+      .then(k => { config.https.key = k; }));
+    promises.push(
+      Fs.readFile(config.https.cert)
+      .then(c => { config.https.cert = c; }));
   }
 
-  Promise.all(promises)
-  .then(ps => {
-    console.debug(ps);
-    server.listen(config.port);
-    console.log("Server started on port", config.port);
+  return Promise.all(promises)
+  .then(() => {
+    const server = new Express();
+
+    const protocol = config.https
+          ? HTTPS.Server(config.https, server)
+          : HTTP.Server(server);
+
+    server.use(Cors());
+
+    if (options.debug)
+      server.use((req, res, next) => {
+        console.debug(`${req.method} ${req.url}`);
+        next();
+      });
+
+    if (config.auth) {
+      // config.auth has user:pass keys. Make sure that server.cfg is not
+      // accessible through the web server!
+      console.debug("BasicAuth enabled");
+      server.use(BasicAuth({
+        users: config.auth,
+        challenge: true,
+        realm: "Dive Club Resources"
+      }));
+    }
+
+    // get/post database files, if data_dir is defined.
+    if (config.data_dir) {
+      console.debug(`config: Database at ${config.data_dir}`);
+      server.use(bodyParser.text({ type: '*/*' }));
+      server.post("/data/*path", (req, res) => {
+        const path = Path.normalize(
+          Path.join(config.data_dir, req.params.path[0]));
+        console.debug("DB POST", path);
+        return Fs.writeFile(path, req.body)
+        .then(() => res.status(200).send(`${path} saved`))
+        .catch(e => {
+          console.debug("DB POST failed", e);
+          res.status(400).send(`${path} POST failed`);
+        });
+      });
+      server.get("/data/*path", (req, res) => {
+        const path = Path.normalize(
+          Path.join(config.data_dir, req.params.path[0]));
+        console.debug("DB GET", path);
+        return Fs.readFile(path)
+        .then(buff => res.status(200).send(buff))
+        .catch(e => {
+          console.debug("DB GET failed", e);
+          res.status(400).send(`${path} GET failed`);
+        });
+      });
+    }
+
+    // Serve application files, if app_dir is defined
+    if (config.app_dir) {
+      console.debug(`config: Application at ${config.app_dir}`);
+      server.use(Express.static(config.app_dir));
+    }
+
+    // Make sensors
+    const promises = [];
+    for (const sensor_cfg of config.sensors) {
+      const clss = sensor_cfg.class;
+
+      promises.push(
+        import(`./${clss}.js`)
+        .then(mods => {
+          const SensorClass = mods[clss];
+          sensor_cfg.sensor = new SensorClass(sensor_cfg);
+        })
+        .catch(e => {
+          console.debug(clss, `import(${clss}) : ${e}`);
+          sensor_cfg.error = `Could not import ${clss}: ${e}`;
+ 			  })
+        .then(() => {
+			    // Start trying to connect
+			    console.debug(`Connect sensor ${sensor_cfg.name}`);
+			    start_sensor(sensor_cfg);
+		    })
+        // Add routes
+        .then(() => {
+          server.get(`/${sensor_cfg.sensor.name}`, (req, res) => {
+            if (typeof req.query.t !== "undefined")
+              Time.sync(req.query.t);
+            sensor_cfg.sensor.sample()
+            .then(sample => {
+					    console.debug(`${sensor_cfg.name} => ${sample.sample}`);
+              res.set('Content-Type', 'application/json');
+              res.send(sample);
+            })
+					  .catch(e => {
+              console.debug(`${sensor_cfg.sensor.name} sampling error`, e);
+					  });
+          });
+          return `Registered sensor /${sensor_cfg.sensor.name}`;
+        })
+        .catch(sensor_cfg => {
+          console.debug(sensor_cfg.name, " sensor could not be registered", sensor_cfg);
+          server.get(`/${sensor_cfg.name}`, (req, res, next) => {
+            next();
+          });
+          return Promise.resolve(`failed /${sensor_cfg.name}`);
+        }));
+    }
+
+    Promise.all(promises)
+    .then(ps => {
+      console.debug(ps);
+      protocol.listen(config.port);
+      console.log("Server started on port", config.port);
+    });
   });
 })
 .catch(e => {
