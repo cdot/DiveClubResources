@@ -342,7 +342,6 @@ class Compressor extends Entries {
    */
   set_last_runtime(record) {
 		this.set_runtime_and_digits(record.runtime);
-
     this.$tab.find(".cr_operator").text(record.operator);
     this.$tab.find(".cr_time").text(
       Entries.formatDateTime(record.date));

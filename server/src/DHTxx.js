@@ -69,9 +69,9 @@ class DHTPin {
         // Check sample range
         const sample = { time: Time.now(), temperature: t, humidity: h };
         if (h < RANGE[this.type].rhmin || h > RANGE[this.type].rhmax)
-          sample.humidity_dubious = `${h}% out of range ${RANGE[this.type].rhmin}%..${RANGE[this.type].rhmax}%`;
+          sample.humidity_dubious = `${h}% out of range ${RANGE[this.type].rhmin}%..${RANGE[this.type].rhmax}%, enter it manually`;
         if (t < RANGE[this.type].tmin || t > RANGE[this.type].tmax)
-          sample.temperature_dubious = `${t}C out of range ${RANGE[this.type].tmin}C..${RANGE[this.type].tmax}C`;
+          sample.temperature_dubious = `${t}C out of range ${RANGE[this.type].tmin}C..${RANGE[this.type].tmax}C, enter it manually`;
         self.lastSample = sample;
         resolve(sample);
       };
