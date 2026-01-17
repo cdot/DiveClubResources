@@ -1,7 +1,11 @@
-/*@preserve Copyright (C) 2018-2024 Crawford Currie http://c-dot.co.uk license MIT*/
+/*@preserve Copyright (C) 2018-2026 Crawford Currie http://c-dot.co.uk license MIT*/
 /* eslint-env jquery */
 
 import "jquery";
+
+// Name of last sound file in the sounds/ directory.
+// Sound files are numbered 0.mp3..LAST_SOUND_FILE.mp3
+const LAST_SOUND_FILE = 141;
 
 /**
  * Generic handling for storing lists of key-value maps in CSV files.
@@ -488,7 +492,7 @@ class Entries {
   play_record() {
     if (typeof Audio !== "undefined") {
       // Sounds are numbered 0..130
-      const pick = Math.floor(Math.random() * 131);
+      const pick = Math.floor(Math.random() * LAST_SOUND_FILE);
       try {
         const snd = new Audio(`sounds/${pick}.mp3`);
         snd.play();
