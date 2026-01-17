@@ -1,17 +1,18 @@
 <div class="crowded_tab">
   <div class="hidden alarm error" data-compressor="fixed" data-sensor-config='{"name":"internal_temperature"}'>
 	3rd STAGE HEAD
-    <span class="fixed_internal_temp"></span> IS TOO HOT!
+    <span class="fixed_internal_temperature"></span> IS TOO HOT!
   </div>
-  <div style="float:right;font-size:small">3rd stage: <span class="fixed_internal_temp"></span>
+  <div style="float:right;font-size:small" class="compressor_fixed_internal_temperature_enabled">
+    3rd stage: <span class="fixed_internal_temperature"></span>
   </div>
   <form id="fixed_form" class="validated_form">
     <div>
       Last run by
       <span class="cr_operator">?</span>
-      <span class="cr_time">?</span>.
-      Runtime <span class="cr_runtime">0</span>h.
-      Edit: <span class="cr_last_run fa fa-cog"></span>
+      <span class="cr_time">?</span> @
+      <span class="cr_runtime">0</span>h
+      <span class="cr_edit fa fa-cog"></span>
     </div>
     <div>
       Filters last changed <span class="cr_flc">?</span>,
@@ -38,7 +39,7 @@
 	    </div>
       </div>
 
-      <div class="table-row temperatureRow">
+      <div class="table-row temperatureRow compressor_fixed_intake_temperature_enabled">
 	    <div class="table-head-cell input_label">
           <span data-with-info="#infoTemperature">
 		    Temperature
@@ -59,7 +60,7 @@
         </div>
       </div>
 
-      <div class="table-row humidityRow">
+      <div class="table-row humidityRow compressor_fixed_intake_humidity_enabled">
 	    <div class="table-head-cell input_label">
           <span data-with-info="#infoHumidity">
 		    Humidity
@@ -86,8 +87,6 @@
           <span data-with-info="#infoRuntime">
 		    Runtime
           </span>
-          <br/>
-          <span class="cr_delta detected"></span>
 	    </div>
 	    <div class="table-cell widest">
           <select class="digital" data-units="1000">
@@ -165,6 +164,9 @@
           </select>
           <input name="runtime" id="fixed_runtime" style="display:none" readonly="readonly" type="floating_point" data-msg="Must be greater than the last recorded runtime" min="0" required>
 		  hours
+          <br />
+          <span class="detected">Current run
+          <span class="detected cr_delta"></span></span>
 	    </div>
       </div>
     </div>

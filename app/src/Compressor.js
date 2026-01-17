@@ -109,8 +109,8 @@ class Compressor extends Entries {
 		const record = {};
 		this.$form.find(":input").each((i, el) => {
 			if (el.name in this.keys) {
-				record[el.name] = this.deserialise(
-					el.name, $(el).val());
+        const val = $(el).val();
+				record[el.name] = this.deserialise(el.name, val);
       }
 		});
 		console.debug("Adding compressor record", record);
@@ -207,14 +207,14 @@ class Compressor extends Entries {
 			return false;
 		});
 
-		this.$tab.find(".cr_last_run")
+		this.$tab.find(".cr_edit")
 		.off("click")
 		.on("click", () => {
       const $history = $("#history");
       const $dlg = $("#history_dialog");
       // Has to be moved up to cover everything else
       $("body").append($dlg);
-      $("#HISTORY_TRS").text(HISTORY_TRS);
+      $("#HISTORY_TRS").text(HISTORY_TRS); // help
 			$history.empty().append(this.$history_table(HISTORY_TRS));
 
       $dlg
@@ -298,11 +298,14 @@ class Compressor extends Entries {
    */
   set_runtime(v) {
     this.runtime = v;
-    this.$runtime.val(hms(v));
+    this.$runtime.val(v);
 
+    // Recompute the current delta as the new runtime minus
+    // the last recorded runtime
     let delta = (this.length() > 0)
         ? v - this.get(this.length() - 1).runtime : 0;
 
+    console.debug(`set_runtime ${v} delta ${hms(delta)}`);
     const $delta = this.$tab.find(".cr_delta");
     if (delta > 0) {
       $delta.show().text(hms(delta));
@@ -333,6 +336,7 @@ class Compressor extends Entries {
     this.$form.find("select.digital").each((i, el) => {
       v += $(el).val() * $(el).data("units");
     });
+    v = parseFloat(v.toFixed(2)); // round to two digit mantissa
     this.set_runtime(v);
   }
 
@@ -402,16 +406,16 @@ class Compressor extends Entries {
    * Update a sampled input field.
    * @param {object?} sample the input sample, or null if no sample
    * could be retrieved
-   * data-sample-config further has:
-   *     name: the sensor name e.g. intake_temperature
-   *     max_age: maximum age for valid samples.
-   *     sampled: selector for the element(s) to be shown
-   *              when a sample is found and deemed valid.
+   * data-sensor-config has:
+   *     name:      the sensor name e.g. intake_temperature
+   *     max_age:   maximum age for valid samples
+   *     sampled:   selector for the element(s) to be shown
+   *                when a sample is found and deemed valid
    *     unsampled: selector for the element(s) to be shown
    *                when the sample is too old or no sample
-   *                can be retrieved.
-   *     dubious: selector for when the sample value is questionable
-   *     enabled: selector for a checkbox
+   *                can be retrieved
+   *     dubious: selector for the element(s) to be shown
+   *                when the sample value is out of range
    */
   update_sampled_field($el, sample) {
     const spec = $el.data("sensor-config");
@@ -468,7 +472,7 @@ class Compressor extends Entries {
     this.sensor_timeoutID = null;
 
     const promises = [
-      // Promise to update runtime, This is always sampled.
+      // Promise to update runtime, This is always enabled & sampled
       this.get_sample("power")
       .then(sample => {
         const rta = this.runtime + sample.sample / (60 * 60 * 1000);
@@ -480,22 +484,23 @@ class Compressor extends Entries {
       })
     ];
       
-    // Promise to update sampled fields. These can be disabled in the
+    // Promise to update other sampled fields. These can be disabled in the
     // settings.
     $(`input[data-compressor=${this.id}][data-sensor-config]`)
     .each((i, el) => {
       const $el = $(el);
-      const info = $el.data("sensor-config");
+      const info = $el.data("sensor-config");      
       if (this.config.get(`compressor:${this.id}:enable_${info.name}`)) {
+        $(`.compressor_${this.id}_${info.name}_enabled`).show();
         promises.push(
           this.get_sample(info.name)
           .then(sample => this.update_sampled_field($el, sample))
           .catch(() => this.update_sampled_field($el, null)));
       }
-      //else
-      //  console.debug(`compressor:${this.id}:enable_${info.name}`,
-      //             "sensor is disabled",
-      //            this.config.get(`compressor:${this.id}:enable_${info.name}`));
+      else {
+        // Disable container. Use class for coverage.
+        $(`.compressor_${this.id}_${info.name}_enabled`).hide();
+      }
     });
 
     // Promise to check alarm sensors
@@ -506,11 +511,12 @@ class Compressor extends Entries {
         return;
       const info = $el.data("sensor-config");
       if (this.config.get(`compressor:${this.id}:enable_${info.name}`)) {
+        $(`.compressor_${this.id}_${info.name}_enabled`).show();
         promises.push(
           this.get_sample(info.name)
           .then(sample => {
             sample = sample ? sample.sample : 0;
-            const $report = $(".fixed_internal_temp");
+            const $report = $(".fixed_internal_temperature");
             $report.html(`${Math.round(sample)}&deg;C`);
             const alarm_temp = this.config.get(
               `compressor:${this.id}:${info.name}_alarm`);
@@ -526,7 +532,8 @@ class Compressor extends Entries {
               $el.hide();
             }
           }));
-      }
+      } else
+        $(`.compressor_${this.id}_${info.name}_enabled`).hide();
     });
 
     // Check all sensors
@@ -764,7 +771,7 @@ class Compressor extends Entries {
     
     // Construct header row
     const $tr = $("<div class='table-row'></div>");
-    heads.forEach(h => $tr.append(`<div class="table-cell">${h}</div>`));
+    heads.forEach(h => $tr.append(`<div class="table-head-cell">${h}</div>`));
     $table.append($tr);
 
     const start = ents.length - num_records;

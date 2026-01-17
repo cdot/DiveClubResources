@@ -147,8 +147,8 @@ class Config {
     $(".tab_enabler").each(function() {
       $(this)
       .on("change", function() {
-        const enabled = $(this).is("checked");
-        config.set(`features:${this.name}`, enabled);
+        const tab_enabled = $(this).is("checked");
+        config.set(`features:${this.name}`, tab_enabled);
         app.enable_tabs();
       });
     });

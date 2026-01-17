@@ -74,10 +74,6 @@ body {
   margin: 0;
 }
 
-.cr_delta {
-  font-size: smaller;
-}
-
 /* Markdown */
 [data-markdown] {
   color: blue;

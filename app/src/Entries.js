@@ -432,10 +432,11 @@ class Entries {
       if (val === "")
         return undefined;
       return new Date(val);
-    case 'number':
-      if (val === "")
+    case 'number': {
+       if (val === "")
         return 0;
       return parseFloat(val);
+    }
     case 'boolean':
       // "on", "true" "yes", and "1" are taken as true.
       // Anything else as false.

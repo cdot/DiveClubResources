@@ -431,10 +431,10 @@ class App {
     const active = [];
     $("#main_tabs a.main_tab").each(function(index) {
       const name = this.href.replace(/^.*#/, "");
-      const enabled = cfg.get(`features:${name}`);
-      active[index] = enabled;
+      const tab_enabled = cfg.get(`features:${name}`);
+      active[index] = tab_enabled;
       const li = $(`#main_tabs a[href='#${name}']`).closest("li");
-      if (enabled)
+      if (tab_enabled)
         li.show();
       else
         li.hide();
